@@ -1,9 +1,49 @@
 const Match = require('../models/Match');
+const CreditTransaction = require('../models/CreditTransaction');
 const Session = require('../models/Session');
+const User = require('../models/User');
 
 const isParticipant = (session, userId) => (
   session.userA.toString() === userId.toString() || session.userB.toString() === userId.toString()
 );
+
+const awardSessionCredits = async (session) => {
+  const transactionCount = await CreditTransaction.countDocuments({ session: session._id });
+  if (transactionCount > 0) return;
+
+  const [userA, userB] = await Promise.all([
+    User.findById(session.userA),
+    User.findById(session.userB),
+  ]);
+  const skill = session.skillTaught.trim().toLowerCase();
+  const teacher = [userA, userB].find((user) => user?.skillsOffered?.some(({ skill: offeredSkill }) => offeredSkill?.trim().toLowerCase() === skill));
+
+  if (!teacher) {
+    throw new Error('Unable to identify the session teacher');
+  }
+
+  const learner = teacher._id.equals(userA._id) ? userB : userA;
+  const amount = Math.round((session.duration / 60) * 10);
+  teacher.credits += amount;
+  learner.credits -= amount;
+  await Promise.all([teacher.save(), learner.save()]);
+  await CreditTransaction.create([
+    {
+      user: teacher._id,
+      session: session._id,
+      type: 'earned',
+      amount,
+      description: `Earned ${amount} credits teaching ${session.skillTaught}`,
+    },
+    {
+      user: learner._id,
+      session: session._id,
+      type: 'spent',
+      amount,
+      description: `Spent ${amount} credits learning ${session.skillTaught}`,
+    },
+  ]);
+};
 
 const createSession = async (req, res) => {
   try {
@@ -98,6 +138,10 @@ const updateSessionStatus = async (req, res) => {
 
     if (!allowed) {
       return res.status(400).json({ success: false, message: 'Invalid session status transition' });
+    }
+
+    if (status === 'completed') {
+      await awardSessionCredits(session);
     }
 
     session.status = status;

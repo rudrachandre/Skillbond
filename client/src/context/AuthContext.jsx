@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import api from '../api/axios'
 import { AuthContext } from './authContext'
 
@@ -17,10 +17,10 @@ export function AuthProvider({ children }) {
     setUser(null)
   }
 
-  const updateUser = (nextUser) => {
+  const updateUser = useCallback((nextUser) => {
     setUser(nextUser)
     localStorage.setItem('skillbond_user', JSON.stringify(nextUser))
-  }
+  }, [])
 
   useEffect(() => {
     if (!token) {

@@ -5,6 +5,7 @@ const { createServer } = require('http');
 const jwt = require('jsonwebtoken');
 const { Server } = require('socket.io');
 const connectDB = require('./config/db');
+const creditRoutes = require('./routes/creditRoutes');
 const authRoutes = require('./routes/authRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const matchRoutes = require('./routes/matchRoutes');
@@ -26,6 +27,7 @@ app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/credits', creditRoutes);
 app.use('/api/match', matchRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/users', userRoutes);

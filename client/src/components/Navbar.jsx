@@ -26,6 +26,9 @@ function Navbar() {
         <button className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-amber-50 hover:text-slate-950" onClick={() => navigate('/sessions')} type="button">
           Sessions
         </button>
+        <button className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-amber-50 hover:text-slate-950" onClick={() => navigate('/credits')} type="button">
+          Credits
+        </button>
         <span className="hidden text-sm text-slate-500 sm:inline">{user?.email}</span>
         <button className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-950 hover:text-slate-950" onClick={handleLogout} type="button">
           Log out

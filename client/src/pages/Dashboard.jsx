@@ -1,9 +1,16 @@
 import { motion } from 'framer-motion'
+import { useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import api from '../api/axios'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../context/useAuth'
 
 function Dashboard() {
-  const { user } = useAuth()
+  const { updateUser, user } = useAuth()
+
+  useEffect(() => {
+    api.get('/auth/me').then(({ data }) => updateUser(data.data.user)).catch(() => {})
+  }, [updateUser])
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -15,7 +22,7 @@ function Dashboard() {
           <p className="mt-5 max-w-xl text-lg leading-8 text-slate-500">Your dashboard is ready. The right exchange starts with a simple question.</p>
           <div className="mt-12 grid gap-5 md:grid-cols-3">
             <div className="dashboard-card md:col-span-2"><span className="text-sm font-semibold uppercase tracking-widest text-amber-600">Coming next</span><h2 className="font-display mt-4 text-3xl font-bold text-slate-950">Find your first skill match.</h2><p className="mt-3 max-w-md text-slate-500">Tell us what you can offer and what you are curious to learn.</p></div>
-            <div className="dashboard-card bg-slate-950 text-white"><span className="text-sm font-semibold uppercase tracking-widest text-amber-300">Credits</span><p className="font-display mt-4 text-6xl font-bold">{user?.credits ?? 20}</p><p className="mt-2 text-slate-300">ready to put to work</p></div>
+            <div className="dashboard-card bg-slate-950 text-white"><span className="text-sm font-semibold uppercase tracking-widest text-amber-300">Credits</span><p className="font-display mt-4 text-6xl font-bold">{user?.credits ?? 20}</p><p className="mt-2 text-slate-300">ready to put to work</p><Link className="mt-5 inline-block text-sm font-semibold text-amber-300 underline decoration-amber-300 underline-offset-4" to="/credits">View History</Link></div>
           </div>
         </motion.div>
       </main>

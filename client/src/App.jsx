@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './context/useAuth'
 import Dashboard from './pages/Dashboard'
 import Chat from './pages/Chat'
+import CreditHistory from './pages/CreditHistory'
 import Login from './pages/Login'
 import Matches from './pages/Matches'
 import Discover from './pages/Discover'
@@ -53,6 +54,14 @@ function App() {
         element={
           <ProtectedRoute>
             <Sessions />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/credits"
+        element={
+          <ProtectedRoute>
+            <CreditHistory />
           </ProtectedRoute>
         }
       />
