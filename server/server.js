@@ -12,6 +12,7 @@ const matchRoutes = require('./routes/matchRoutes');
 const Message = require('./models/Message');
 const { canAccessMatch } = require('./controllers/messageController');
 const sessionRoutes = require('./routes/sessionRoutes');
+const reviewRoutes = require('./routes/reviewRoutes');
 const userRoutes = require('./routes/userRoutes');
 
 dotenv.config();
@@ -30,6 +31,7 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/credits', creditRoutes);
 app.use('/api/match', matchRoutes);
 app.use('/api/sessions', sessionRoutes);
+app.use('/api/reviews', reviewRoutes);
 app.use('/api/users', userRoutes);
 
 app.get('/api/health', (req, res) => {

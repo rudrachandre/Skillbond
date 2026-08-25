@@ -7,6 +7,7 @@ import Login from './pages/Login'
 import Matches from './pages/Matches'
 import Discover from './pages/Discover'
 import Onboarding from './pages/Onboarding'
+import PublicProfile from './pages/PublicProfile'
 import Register from './pages/Register'
 import Sessions from './pages/Sessions'
 
@@ -73,6 +74,7 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route path="/profile/:userId" element={<PublicProfile />} />
       <Route
         path="/dashboard"
         element={

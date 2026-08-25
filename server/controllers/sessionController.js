@@ -1,5 +1,6 @@
 const Match = require('../models/Match');
 const CreditTransaction = require('../models/CreditTransaction');
+const Review = require('../models/Review');
 const Session = require('../models/Session');
 const User = require('../models/User');
 
@@ -105,11 +106,17 @@ const getMySessions = async (req, res) => {
       .populate('userA', '-password')
       .populate('userB', '-password')
       .sort({ scheduledAt: 1 });
+    const reviews = await Review.find({ reviewer: req.user._id }).select('session');
+    const reviewedSessionIds = new Set(reviews.map((review) => review.session.toString()));
+    const sessionData = sessions.map((session) => ({
+      ...session.toObject(),
+      reviewedByMe: reviewedSessionIds.has(session._id.toString()),
+    }));
 
     return res.json({
       success: true,
       message: 'Sessions retrieved',
-      data: { sessions },
+      data: { sessions: sessionData },
     });
   } catch (error) {
     console.error(`Session retrieval error: ${error.message}`);
