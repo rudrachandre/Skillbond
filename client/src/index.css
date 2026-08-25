@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'DM Sans', sans-serif;
+  color: #0f172a;
+  background: #f8fafc;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+button, input { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: wait; opacity: 0.65; }
+
+.font-display { font-family: 'Space Grotesk', sans-serif; }
+.auth-layout { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr); background: #f8fafc; }
+.auth-aside { position: relative; overflow: hidden; padding: clamp(2.5rem, 8vw, 7rem); background: #0f172a; }
+.auth-aside::after { content: ''; position: absolute; right: -8rem; bottom: -8rem; width: 24rem; height: 24rem; border: 1px solid rgba(251, 191, 36, 0.45); border-radius: 50%; box-shadow: 0 0 0 32px rgba(251, 191, 36, 0.06), 0 0 0 64px rgba(251, 191, 36, 0.04); }
+.auth-panel { align-self: center; width: min(100%, 480px); padding: 3rem clamp(1.5rem, 6vw, 5rem); }
+.eyebrow { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
+.field-label { display: block; font-size: 0.875rem; font-weight: 600; color: #334155; }
+.field-input { display: block; width: 100%; margin-top: 0.5rem; border: 1px solid #cbd5e1; border-radius: 0.6rem; background: white; padding: 0.8rem 0.9rem; color: #0f172a; outline: none; transition: border-color 150ms, box-shadow 150ms; }
+.field-input:focus { border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18); }
+.primary-button { width: 100%; border-radius: 0.6rem; background: #0f172a; padding: 0.85rem 1rem; color: white; font-weight: 700; transition: background 150ms, transform 150ms; }
+.primary-button:hover { background: #1e293b; transform: translateY(-1px); }
+.dashboard-card { border: 1px solid #e2e8f0; border-radius: 0.75rem; background: white; padding: 2rem; }
+
+@media (max-width: 760px) {
+  .auth-layout { display: block; }
+  .auth-aside { min-height: 360px; padding: 2.5rem 1.5rem 3rem; }
+  .auth-aside h1 { font-size: 3.5rem; }
+  .auth-panel { margin: 0 auto; padding: 3rem 1.5rem 4rem; }
+}
