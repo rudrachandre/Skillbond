@@ -14,6 +14,26 @@ function UserSkills({ user }) {
   )
 }
 
+function SharedSkills({ match, currentUserId }) {
+  const current = String(match.userA?._id) === String(currentUserId) ? match.userA : match.userB
+  const other = String(match.userA?._id) === String(currentUserId) ? match.userB : match.userA
+  const offered = new Set((other?.skillsOffered || []).map(({ skill }) => skill.toLowerCase()))
+  const wanted = new Set((other?.skillsWanted || []).map(({ skill }) => skill.toLowerCase()))
+  const learn = (current?.skillsWanted || []).filter(({ skill }) => offered.has(skill.toLowerCase())).map(({ skill }) => skill)
+  const teach = (current?.skillsOffered || []).filter(({ skill }) => wanted.has(skill.toLowerCase())).map(({ skill }) => skill)
+  return <div className="mt-4 grid gap-2 text-xs text-slate-500 sm:grid-cols-2"><p><strong>Learn from them:</strong> {learn.join(', ') || 'No overlap yet'}</p><p><strong>Teach them:</strong> {teach.join(', ') || 'No overlap yet'}</p></div>
+}
+
+function SharedSkills({ match, currentUserId }) {
+  const current = String(match.userA?._id) === String(currentUserId) ? match.userA : match.userB
+  const other = String(match.userA?._id) === String(currentUserId) ? match.userB : match.userA
+  const otherOffered = new Set((other?.skillsOffered || []).map(({ skill }) => skill.toLowerCase()))
+  const otherWanted = new Set((other?.skillsWanted || []).map(({ skill }) => skill.toLowerCase()))
+  const canLearn = (current?.skillsWanted || []).filter(({ skill }) => otherOffered.has(skill.toLowerCase())).map(({ skill }) => skill)
+  const canTeach = (current?.skillsOffered || []).filter(({ skill }) => otherWanted.has(skill.toLowerCase())).map(({ skill }) => skill)
+  return <div className="mt-4 grid gap-2 text-xs text-slate-500 sm:grid-cols-2"><p><span className="font-semibold text-slate-700">Learn from them:</span> {canLearn.join(', ') || 'No overlap yet'}</p><p><span className="font-semibold text-slate-700">Teach them:</span> {canTeach.join(', ') || 'No overlap yet'}</p></div>
+}
+
 function MatchedUser({ match, currentUserId }) {
   return String(match.userA?._id) === String(currentUserId) ? match.userB : match.userA
 }
@@ -69,8 +89,9 @@ function Matches() {
           <section aria-labelledby="requests-heading"><div className="flex items-baseline justify-between gap-4"><h2 className="font-display text-3xl font-bold text-slate-950" id="requests-heading">Pending requests</h2><span className="text-sm font-semibold text-slate-500">{pending.length}</span></div>
             {pending.length === 0 ? <p className="mt-5 text-slate-500">No new requests right now.</p> : <div className="mt-6 grid gap-5 md:grid-cols-2">{pending.map((match) => <motion.article animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm" initial={{ opacity: 0, y: 12 }} key={match._id} transition={{ duration: 0.3 }}><div className="flex items-start justify-between gap-4"><div className="flex items-center gap-4"><div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-950 font-display text-lg font-bold text-amber-300">{match.userA?.name?.slice(0, 1).toUpperCase()}</div><div><h3 className="font-display text-xl font-bold text-slate-950">{match.userA?.name}</h3><p className="text-sm text-slate-500">wants to connect</p></div></div><span className="font-display text-2xl font-bold text-slate-950">{match.matchScore}%</span></div><UserSkills user={match.userA} /><div className="mt-6 flex gap-3"><button className="primary-button" disabled={respondingId === match._id} onClick={() => respond(match._id, 'accept')} type="button">{respondingId === match._id ? 'Saving...' : 'Accept'}</button><button className="rounded-lg border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-600 transition hover:border-red-300 hover:text-red-600" disabled={respondingId === match._id} onClick={() => respond(match._id, 'reject')} type="button">Reject</button></div></motion.article>)}</div>}
           </section>
+          {!isLoading && !error && pending.length === 0 && connections.length === 0 && <Link className="primary-button mt-8 inline-block !w-auto px-5" to="/discover">Find Connections</Link>}
           <section aria-labelledby="connections-heading"><div className="flex items-baseline justify-between gap-4"><h2 className="font-display text-3xl font-bold text-slate-950" id="connections-heading">My Connections</h2><span className="text-sm font-semibold text-slate-500">{connections.length}</span></div>
-            {connections.length === 0 ? <p className="mt-5 text-slate-500">Accepted connections will appear here.</p> : <div className="mt-6 grid gap-5 md:grid-cols-2">{connections.map((match) => { const matchedUser = MatchedUser({ match, currentUserId: user.id }); return <motion.article animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm" initial={{ opacity: 0, y: 12 }} key={match._id} transition={{ duration: 0.3 }}><div className="flex min-w-0 items-center gap-4"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-300 font-display text-lg font-bold text-slate-950">{matchedUser?.name?.slice(0, 1).toUpperCase()}</div><div className="min-w-0"><h3 className="truncate font-display text-xl font-bold text-slate-950">{matchedUser?.name}</h3><p className="text-sm text-slate-500">{match.matchScore}% match</p></div></div><Link className="shrink-0 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-950 hover:text-slate-950" to={`/chat/${match._id}`}>Message</Link></motion.article>})}</div>}
+            {connections.length === 0 ? <p className="mt-5 text-slate-500">Accepted connections will appear here.</p> : <div className="mt-6 grid gap-5 md:grid-cols-2">{connections.map((match) => { const matchedUser = MatchedUser({ match, currentUserId: user.id }); return <motion.article animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm" initial={{ opacity: 0, y: 12 }} key={match._id} transition={{ duration: 0.3 }}><div className="flex items-center justify-between gap-4"><div className="flex min-w-0 items-center gap-4"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-300 font-display text-lg font-bold text-slate-950">{matchedUser?.name?.slice(0, 1).toUpperCase()}</div><div className="min-w-0"><h3 className="truncate font-display text-xl font-bold text-slate-950">{matchedUser?.name}</h3><p className="text-sm text-slate-500">{match.matchScore}% match</p></div></div><Link className="shrink-0 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-950 hover:text-slate-950" to={`/chat/${match._id}`}>Message</Link></div><SharedSkills currentUserId={user.id} match={match} /></motion.article>})}</div>}
           </section>
         </div>}
       </main>

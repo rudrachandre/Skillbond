@@ -49,7 +49,7 @@ const awardSessionCredits = async (session) => {
 
 const createSession = async (req, res) => {
   try {
-    const { duration = 60, matchId, scheduledAt, skillTaught } = req.body;
+    const { duration = 60, matchId, meetingLink = '', scheduledAt, skillTaught } = req.body;
 
     if (!matchId || !skillTaught || !scheduledAt) {
       return res.status(400).json({
@@ -86,6 +86,7 @@ const createSession = async (req, res) => {
       skillTaught: skillTaught.trim(),
       scheduledAt: date,
       duration: parsedDuration,
+      meetingLink: meetingLink.trim(),
     });
     createNotification(otherUser, 'session_request', `${req.user.name} requested a ${skillTaught.trim()} session`, session._id.toString()).catch((error) => console.error(`Session notification error: ${error.message}`));
 
@@ -128,8 +129,12 @@ const getMySessions = async (req, res) => {
 
 const updateSessionStatus = async (req, res) => {
   try {
-    const { status } = req.body;
-    if (!['confirmed', 'completed', 'cancelled'].includes(status)) {
+    const { scheduledAt: nextScheduledAt, status } = req.body;
+    if (nextScheduledAt !== undefined) {
+      const parsedDate = new Date(nextScheduledAt);
+      if (Number.isNaN(parsedDate.getTime())) return res.status(400).json({ success: false, message: 'scheduledAt must be a valid date' });
+    }
+    if (status && !['confirmed', 'completed', 'cancelled'].includes(status)) {
       return res.status(400).json({
         success: false,
         message: 'Status must be confirmed, completed, or cancelled',
@@ -140,8 +145,15 @@ const updateSessionStatus = async (req, res) => {
     if (!session || !isParticipant(session, req.user._id)) {
       return res.status(404).json({ success: false, message: 'Session not found' });
     }
+    if (nextScheduledAt !== undefined && !['requested', 'confirmed'].includes(session.status)) return res.status(400).json({ success: false, message: 'Only upcoming sessions can be rescheduled' });
 
     const isRecipient = session.userB.toString() === req.user._id.toString();
+    if (nextScheduledAt !== undefined) {
+      session.scheduledAt = new Date(nextScheduledAt);
+      session.status = 'requested';
+      await session.save();
+      return res.json({ success: true, message: 'Session rescheduled', data: { session } });
+    }
     const allowed = (session.status === 'requested' && ((status === 'confirmed' && isRecipient) || status === 'cancelled'))
       || (session.status === 'confirmed' && (status === 'completed' || status === 'cancelled'));
 

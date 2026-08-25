@@ -30,6 +30,11 @@ const sessionSchema = new mongoose.Schema({
     default: 60,
     min: 15,
   },
+  meetingLink: {
+    type: String,
+    default: '',
+    trim: true,
+  },
   status: {
     type: String,
     enum: ['requested', 'confirmed', 'completed', 'cancelled'],

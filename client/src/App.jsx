@@ -3,6 +3,7 @@ import { useAuth } from './context/useAuth'
 import Dashboard from './pages/Dashboard'
 import Chat from './pages/Chat'
 import CreditHistory from './pages/CreditHistory'
+import EditProfile from './pages/EditProfile'
 import Login from './pages/Login'
 import Matches from './pages/Matches'
 import Discover from './pages/Discover'
@@ -26,6 +27,7 @@ function App() {
     <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/profile" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
       <Route
         path="/chat/:matchId"
         element={

@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import api from '../api/axios'
 import Navbar from '../components/Navbar'
+import { Link } from 'react-router-dom'
 
 function SkillList({ label, skills }) {
   return (
@@ -54,7 +55,7 @@ function Discover() {
         {error && <p className="mt-10 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</p>}
         {actionError && <p className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{actionError}</p>}
         {isLoading && <div className="py-20 text-center text-slate-500">Looking for a good exchange...</div>}
-        {!isLoading && !error && matches.length === 0 && <div className="mt-12 rounded-xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center"><h2 className="font-display text-3xl font-bold text-slate-950">You are all caught up.</h2><p className="mt-3 text-slate-500">Add more skills to your profile to discover new connections.</p></div>}
+        {!isLoading && !error && matches.length === 0 && <div className="mt-12 rounded-xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center"><h2 className="font-display text-3xl font-bold text-slate-950">No matches yet.</h2><p className="mt-3 text-slate-500">Add skills to your profile to discover people who complement them.</p><Link className="primary-button mt-6 inline-block !w-auto px-5" to="/profile">Complete Your Profile</Link></div>}
         <div className="mt-12 grid gap-6 md:grid-cols-2">
           <AnimatePresence mode="popLayout">
             {matches.map((match) => <motion.article animate={{ opacity: 1, scale: 1, y: 0 }} className="flex flex-col rounded-xl border border-slate-200 bg-white p-6 shadow-sm" exit={{ opacity: 0, scale: 0.92, x: 80, transition: { duration: 0.22 } }} initial={{ opacity: 0, scale: 0.96, y: 16 }} key={match.id} layout transition={{ duration: 0.3 }}>

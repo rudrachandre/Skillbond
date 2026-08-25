@@ -11,7 +11,7 @@ function Register() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [registrationStarted, setRegistrationStarted] = useState(false)
 
-  if (user && !registrationStarted.current) return <Navigate to="/dashboard" replace />
+  if (user && !registrationStarted) return <Navigate to="/dashboard" replace />
 
   const handleChange = (event) => setForm({ ...form, [event.target.name]: event.target.value })
 
