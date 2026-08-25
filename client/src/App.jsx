@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './context/useAuth'
 import Dashboard from './pages/Dashboard'
+import Chat from './pages/Chat'
 import Login from './pages/Login'
 import Matches from './pages/Matches'
 import Discover from './pages/Discover'
@@ -22,6 +23,14 @@ function App() {
     <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route
+        path="/chat/:matchId"
+        element={
+          <ProtectedRoute>
+            <Chat />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/discover"
         element={
