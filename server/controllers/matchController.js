@@ -115,6 +115,23 @@ const requestMatch = async (req, res) => {
   }
 };
 
+const getPendingMatches = async (req, res) => {
+  try {
+    const matches = await Match.find({ userB: req.user._id, status: 'pending' })
+      .populate('userA', '-password')
+      .sort({ createdAt: -1 });
+
+    return res.json({
+      success: true,
+      message: 'Pending match requests retrieved',
+      data: { matches },
+    });
+  } catch (error) {
+    console.error(`Pending matches error: ${error.message}`);
+    return res.status(500).json({ success: false, message: 'Unable to retrieve pending requests' });
+  }
+};
+
 const respondToMatch = async (req, res) => {
   try {
     const { action } = req.body;
@@ -162,4 +179,4 @@ const getMyMatches = async (req, res) => {
   }
 };
 
-module.exports = { getMatches, getMyMatches, requestMatch, respondToMatch };
+module.exports = { getMatches, getMyMatches, getPendingMatches, requestMatch, respondToMatch };

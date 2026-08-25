@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './context/useAuth'
 import Dashboard from './pages/Dashboard'
 import Login from './pages/Login'
+import Matches from './pages/Matches'
 import Discover from './pages/Discover'
 import Onboarding from './pages/Onboarding'
 import Register from './pages/Register'
@@ -26,6 +27,14 @@ function App() {
         element={
           <ProtectedRoute>
             <Discover />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/matches"
+        element={
+          <ProtectedRoute>
+            <Matches />
           </ProtectedRoute>
         }
       />
