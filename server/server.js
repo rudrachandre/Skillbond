@@ -24,7 +24,7 @@ connectDB();
 const app = express();
 const port = process.env.PORT || 5000;
 
-const allowedOrigins = ['http://localhost:5173', 'http://localhost:5174'];
+   const allowedOrigins = ['http://localhost:5173', 'http://localhost:5174', 'https://skillbond-jet.vercel.app'];
 
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
