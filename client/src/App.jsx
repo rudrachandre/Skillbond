@@ -7,6 +7,7 @@ import Matches from './pages/Matches'
 import Discover from './pages/Discover'
 import Onboarding from './pages/Onboarding'
 import Register from './pages/Register'
+import Sessions from './pages/Sessions'
 
 function ProtectedRoute({ children }) {
   const { isLoading, user } = useAuth()
@@ -44,6 +45,14 @@ function App() {
         element={
           <ProtectedRoute>
             <Matches />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/sessions"
+        element={
+          <ProtectedRoute>
+            <Sessions />
           </ProtectedRoute>
         }
       />

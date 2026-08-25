@@ -10,6 +10,7 @@ const messageRoutes = require('./routes/messageRoutes');
 const matchRoutes = require('./routes/matchRoutes');
 const Message = require('./models/Message');
 const { canAccessMatch } = require('./controllers/messageController');
+const sessionRoutes = require('./routes/sessionRoutes');
 const userRoutes = require('./routes/userRoutes');
 
 dotenv.config();
@@ -26,6 +27,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/match', matchRoutes);
+app.use('/api/sessions', sessionRoutes);
 app.use('/api/users', userRoutes);
 
 app.get('/api/health', (req, res) => {
