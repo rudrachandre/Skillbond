@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './context/useAuth'
 import Dashboard from './pages/Dashboard'
 import Login from './pages/Login'
+import Discover from './pages/Discover'
 import Onboarding from './pages/Onboarding'
 import Register from './pages/Register'
 
@@ -20,6 +21,14 @@ function App() {
     <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route
+        path="/discover"
+        element={
+          <ProtectedRoute>
+            <Discover />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/onboarding"
         element={
