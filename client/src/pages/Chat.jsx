@@ -61,7 +61,7 @@ function Chat() {
       active = false
       socket.off('receive_message', handleMessage)
       socket.off('chat_error', handleSocketError)
-      socket.disconnect()
+      socket.emit('leave_chat', matchId)
     }
   }, [matchId])
 

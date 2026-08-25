@@ -1,5 +1,6 @@
 const Match = require('../models/Match');
 const User = require('../models/User');
+const { createNotification } = require('../utils/notify');
 
 const skillNames = (skills = []) => new Set(
   skills
@@ -103,6 +104,7 @@ const requestMatch = async (req, res) => {
     const mutual = teachableOverlap.length > 0 && learningOverlap.length > 0;
     const matchScore = mutual ? Math.round(((offeredRatio + wantedRatio) / 2) * 100) : Math.round(Math.max(offeredRatio, wantedRatio) * 50);
     const match = await Match.create({ userA: req.user._id, userB: userId, matchScore });
+    createNotification(targetUser._id, 'match_request', `${req.user.name} sent you a match request`, match._id.toString()).catch((error) => console.error(`Match notification error: ${error.message}`));
 
     return res.status(201).json({
       success: true,
@@ -146,6 +148,7 @@ const respondToMatch = async (req, res) => {
 
     match.status = action === 'accept' ? 'accepted' : 'rejected';
     await match.save();
+    if (action === 'accept') createNotification(match.userA, 'match_accepted', `${req.user.name} accepted your match request`, match._id.toString()).catch((error) => console.error(`Match notification error: ${error.message}`));
 
     return res.json({
       success: true,

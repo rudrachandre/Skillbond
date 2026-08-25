@@ -1,6 +1,7 @@
 const Review = require('../models/Review');
 const Session = require('../models/Session');
 const User = require('../models/User');
+const { createNotification } = require('../utils/notify');
 
 const createReview = async (req, res) => {
   try {
@@ -41,6 +42,7 @@ const createReview = async (req, res) => {
       rating: parsedRating,
       comment: comment.trim(),
     });
+    createNotification(reviewee, 'new_review', `${req.user.name} left you a ${parsedRating}-star review`, review._id.toString()).catch((error) => console.error(`Review notification error: ${error.message}`));
 
     return res.status(201).json({
       success: true,

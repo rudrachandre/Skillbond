@@ -6,11 +6,13 @@ const jwt = require('jsonwebtoken');
 const { Server } = require('socket.io');
 const connectDB = require('./config/db');
 const creditRoutes = require('./routes/creditRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 const authRoutes = require('./routes/authRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const matchRoutes = require('./routes/matchRoutes');
 const Message = require('./models/Message');
 const { canAccessMatch } = require('./controllers/messageController');
+const { createNotification, isUserInRoom, setSocketServer } = require('./utils/notify');
 const sessionRoutes = require('./routes/sessionRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -29,6 +31,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/credits', creditRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/api/match', matchRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/reviews', reviewRoutes);
@@ -42,6 +45,7 @@ const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: { origin: allowedOrigins },
 });
+setSocketServer(io);
 
 io.use((socket, next) => {
   try {
@@ -57,6 +61,8 @@ io.use((socket, next) => {
 });
 
 io.on('connection', (socket) => {
+  socket.join(String(socket.user._id));
+
   socket.on('join_chat', async (matchId) => {
     try {
       const match = await canAccessMatch(matchId, socket.user._id);
@@ -65,6 +71,10 @@ io.on('connection', (socket) => {
     } catch (error) {
       socket.emit('chat_error', 'Unable to join chat');
     }
+  });
+
+  socket.on('leave_chat', (matchId) => {
+    socket.leave(String(matchId));
   });
 
   socket.on('send_message', async ({ matchId, content, clientMessageId }) => {
@@ -85,6 +95,8 @@ io.on('connection', (socket) => {
         sender: String(socket.user._id),
         clientMessageId,
       });
+      const recipientId = match.userA.toString() === socket.user._id.toString() ? match.userB : match.userA;
+      if (!isUserInRoom(recipientId, match._id)) createNotification(recipientId, 'new_message', 'You received a new message', match._id.toString()).catch((error) => console.error(`Message notification error: ${error.message}`));
     } catch (error) {
       socket.emit('chat_error', 'Unable to send message');
     }

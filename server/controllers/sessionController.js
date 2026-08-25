@@ -3,6 +3,7 @@ const CreditTransaction = require('../models/CreditTransaction');
 const Review = require('../models/Review');
 const Session = require('../models/Session');
 const User = require('../models/User');
+const { createNotification } = require('../utils/notify');
 
 const isParticipant = (session, userId) => (
   session.userA.toString() === userId.toString() || session.userB.toString() === userId.toString()
@@ -86,6 +87,7 @@ const createSession = async (req, res) => {
       scheduledAt: date,
       duration: parsedDuration,
     });
+    createNotification(otherUser, 'session_request', `${req.user.name} requested a ${skillTaught.trim()} session`, session._id.toString()).catch((error) => console.error(`Session notification error: ${error.message}`));
 
     return res.status(201).json({
       success: true,
@@ -153,6 +155,7 @@ const updateSessionStatus = async (req, res) => {
 
     session.status = status;
     await session.save();
+    if (status === 'confirmed') createNotification(session.userA, 'session_confirmed', `${req.user.name} confirmed your ${session.skillTaught} session`, session._id.toString()).catch((error) => console.error(`Session notification error: ${error.message}`));
 
     return res.json({
       success: true,
