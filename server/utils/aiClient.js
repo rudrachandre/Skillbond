@@ -1,6 +1,6 @@
 const OpenAI = require('openai');
 
-  const model = 'meta/llama-3.1-8b-instruct';
+  const model = 'nvidia/nemotron-3.5-lightning-30b-a3b';
 
 const getAIClient = () => {
   if (!process.env.NVIDIA_API_KEY) return null;
