@@ -14,15 +14,7 @@ function UserSkills({ user }) {
   )
 }
 
-function SharedSkills({ match, currentUserId }) {
-  const current = String(match.userA?._id) === String(currentUserId) ? match.userA : match.userB
-  const other = String(match.userA?._id) === String(currentUserId) ? match.userB : match.userA
-  const offered = new Set((other?.skillsOffered || []).map(({ skill }) => skill.toLowerCase()))
-  const wanted = new Set((other?.skillsWanted || []).map(({ skill }) => skill.toLowerCase()))
-  const learn = (current?.skillsWanted || []).filter(({ skill }) => offered.has(skill.toLowerCase())).map(({ skill }) => skill)
-  const teach = (current?.skillsOffered || []).filter(({ skill }) => wanted.has(skill.toLowerCase())).map(({ skill }) => skill)
-  return <div className="mt-4 grid gap-2 text-xs text-slate-500 sm:grid-cols-2"><p><strong>Learn from them:</strong> {learn.join(', ') || 'No overlap yet'}</p><p><strong>Teach them:</strong> {teach.join(', ') || 'No overlap yet'}</p></div>
-}
+
 
 function SharedSkills({ match, currentUserId }) {
   const current = String(match.userA?._id) === String(currentUserId) ? match.userA : match.userB

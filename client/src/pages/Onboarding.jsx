@@ -15,7 +15,7 @@ function SkillStep({ title, description, skills, onAdd, onChange, onRemove }) {
       <p className="mt-3 text-slate-500">{description}</p>
       <div className="mt-8 space-y-3">
         {skills.map((item, index) => (
-          <div className="grid gap-3 sm:grid-cols-[1fr_180px_auto]" key={`${item.skill}-${index}`}>
+          <div className="grid gap-3 sm:grid-cols-[1fr_180px_auto]" key={index}>
             <input className="field-input mt-0" aria-label={`Skill ${index + 1}`} name="skill" onChange={(event) => onChange(index, event)} placeholder="Skill name" required type="text" value={item.skill} />
             <select className="field-input mt-0" aria-label={`Level for skill ${index + 1}`} name="level" onChange={(event) => onChange(index, event)} value={item.level}>
               {levels.map((level) => <option key={level}>{level}</option>)}

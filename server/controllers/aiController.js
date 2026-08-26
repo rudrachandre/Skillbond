@@ -1,7 +1,15 @@
 const { getAIClient, model } = require('../utils/aiClient');
 
 const parseSuggestions = (content) => {
-  const cleaned = content.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+  let cleaned = content.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+
+  // If the model added extra text before/after the JSON, extract just the JSON object
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+  }
+
   const parsed = JSON.parse(cleaned);
   if (!parsed || !Array.isArray(parsed.suggestions)) throw new Error('Invalid suggestions format');
   return {
