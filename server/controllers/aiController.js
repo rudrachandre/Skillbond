@@ -3,15 +3,42 @@ const { getAIClient, model } = require('../utils/aiClient');
 const parseSuggestions = (content) => {
   let cleaned = content.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
 
-  // If the model added extra text before/after the JSON, extract just the JSON object
-  const firstBrace = cleaned.indexOf('{');
-  const lastBrace = cleaned.lastIndexOf('}');
-  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-    cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+  // Try direct parse first
+  try {
+    const parsed = JSON.parse(cleaned);
+    if (parsed && Array.isArray(parsed.suggestions)) {
+      return {
+        suggestions: parsed.suggestions
+          .filter(({ reason, skill }) => typeof skill === 'string' && typeof reason === 'string')
+          .slice(0, 5),
+      };
+    }
+  } catch {
+    // fall through to extraction below
   }
 
-  const parsed = JSON.parse(cleaned);
+  // Extract the first balanced { ... } block that contains "suggestions"
+  const start = cleaned.indexOf('{');
+  if (start === -1) throw new Error('No JSON object found in AI response');
+
+  let depth = 0;
+  let end = -1;
+  for (let i = start; i < cleaned.length; i += 1) {
+    if (cleaned[i] === '{') depth += 1;
+    if (cleaned[i] === '}') {
+      depth -= 1;
+      if (depth === 0) {
+        end = i;
+        break;
+      }
+    }
+  }
+  if (end === -1) throw new Error('Could not find a complete JSON object in AI response');
+
+  const jsonSlice = cleaned.slice(start, end + 1);
+  const parsed = JSON.parse(jsonSlice);
   if (!parsed || !Array.isArray(parsed.suggestions)) throw new Error('Invalid suggestions format');
+
   return {
     suggestions: parsed.suggestions
       .filter(({ reason, skill }) => typeof skill === 'string' && typeof reason === 'string')
