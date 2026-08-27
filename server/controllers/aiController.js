@@ -57,7 +57,7 @@ const getSkillSuggestions = async (req, res) => {
 
   const skillsOffered = req.user.skillsOffered.map(({ skill, level }) => `${skill} (${level})`).join(', ') || 'None yet';
   const skillsWanted = req.user.skillsWanted.map(({ skill, level }) => `${skill} (${level})`).join(', ') || 'None yet';
-  const prompt = `You are a practical learning advisor. Based on the user's current skills below, suggest 3 to 5 SPECIFIC, REAL skill names they could learn next (for example: "Docker", "Public Speaking", "SQL"). Do not use placeholder text like "..." or generic labels. Respond with ONLY valid JSON, no other text, in exactly this shape: {"suggestions":[{"skill":"Docker","reason":"A one sentence real reason here"}]}\n\nUser's current skills they can teach: ${skillsOffered}\nUser's current skills they want to learn: ${skillsWanted}`;
+  const prompt = `You are a practical learning advisor. Based on the user's current skills below, think of 3 to 5 specific real-world skills that would genuinely complement what they already know. Each suggestion must be a different, specific skill name relevant to their profile (not a generic example, not "Docker" or "SQL" unless it is truly the best fit for THIS user). Each reason must be a unique, specific sentence explaining why that particular skill helps THIS user based on what they offer and want to learn.\n\nRespond with ONLY valid JSON and nothing else, in this exact structure: {"suggestions":[{"skill":"<real skill name>","reason":"<specific one-sentence reason>"}]}\n\nUser's current skills they can teach: ${skillsOffered}\nUser's current skills they want to learn: ${skillsWanted}`;
   try {
     const completion = await client.chat.completions.create({
       model,
