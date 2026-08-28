@@ -49,9 +49,11 @@ const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
     if (!currentPassword || !newPassword || newPassword.length < 6) return res.status(400).json({ success: false, message: 'Current password and a new password of at least 6 characters are required' });
-    if (!(await bcrypt.compare(currentPassword, req.user.password))) return res.status(401).json({ success: false, message: 'Current password is incorrect' });
-    req.user.password = newPassword;
-    await req.user.save();
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(401).json({ success: false, message: 'User no longer exists' });
+    if (!(await bcrypt.compare(currentPassword, user.password))) return res.status(401).json({ success: false, message: 'Current password is incorrect' });
+    user.password = newPassword;
+    await user.save();
     return res.json({ success: true, message: 'Password changed successfully', data: {} });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Unable to change password' });

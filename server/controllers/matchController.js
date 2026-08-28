@@ -27,10 +27,12 @@ const getMatches = async (req, res) => {
     const currentUser = req.user;
     const offeredByCurrentUser = skillNames(currentUser.skillsOffered);
     const wantedByCurrentUser = skillNames(currentUser.skillsWanted);
-    const users = await User.find({ _id: { $ne: currentUser._id } }).select('-password');
+    const users = await User.find({ _id: { $ne: currentUser._id, $nin: currentUser.blockedUsers || [] } }).select('-password');
 
     const matches = users
       .map((user) => {
+        // Mutual exclusion: also skip users who have blocked the current user.
+        if ((user.blockedUsers || []).some((id) => String(id) === String(currentUser._id))) return null;
         const offeredByCandidate = skillNames(user.skillsOffered);
         const wantedByCandidate = skillNames(user.skillsWanted);
         const teachableOverlap = overlap(offeredByCandidate, wantedByCurrentUser);
@@ -82,6 +84,13 @@ const requestMatch = async (req, res) => {
     const targetUser = await User.findById(userId).select('-password');
     if (!targetUser) {
       return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Blocked (either direction) -> cannot send a request.
+    const currentBlocked = (req.user.blockedUsers || []).some((id) => String(id) === String(userId));
+    const targetBlocked = (targetUser.blockedUsers || []).some((id) => String(id) === String(req.user._id));
+    if (currentBlocked || targetBlocked) {
+      return res.status(403).json({ success: false, message: 'Unable to send request to this user' });
     }
 
     const existingMatch = await Match.findOne({
@@ -182,4 +191,26 @@ const getMyMatches = async (req, res) => {
   }
 };
 
-module.exports = { getMatches, getMyMatches, getPendingMatches, requestMatch, respondToMatch };
+const unmatch = async (req, res) => {
+  try {
+    const match = await Match.findOneAndDelete({
+      _id: req.params.matchId,
+      $or: [{ userA: req.user._id }, { userB: req.user._id }],
+      status: 'accepted',
+    });
+
+    if (!match) {
+      return res.status(404).json({ success: false, message: 'Accepted match not found' });
+    }
+
+    // Note: chat Message documents (keyed by matchId) are intentionally left
+    // untouched so the conversation history is preserved.
+
+    return res.json({ success: true, message: 'Connection removed', data: {} });
+  } catch (error) {
+    console.error(`Unmatch error: ${error.message}`);
+    return res.status(500).json({ success: false, message: 'Unable to remove connection' });
+  }
+};
+
+module.exports = { getMatches, getMyMatches, getPendingMatches, requestMatch, respondToMatch, unmatch };

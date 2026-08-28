@@ -52,6 +52,11 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 20,
   },
+  blockedUsers: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: 'User',
+    default: [],
+  },
   createdAt: {
     type: Date,
     default: Date.now,

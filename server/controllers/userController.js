@@ -1,3 +1,6 @@
+const Match = require('../models/Match');
+const User = require('../models/User');
+
 const updateProfile = async (req, res) => {
   try {
     const { avatar, bio, name, skillsOffered, skillsWanted } = req.body;
@@ -53,4 +56,48 @@ const updateProfile = async (req, res) => {
   }
 };
 
-module.exports = { updateProfile };
+const blockUser = async (req, res) => {
+  try {
+    const targetId = req.params.userId;
+    if (String(req.user._id) === String(targetId)) {
+      return res.status(400).json({ success: false, message: 'You cannot block yourself' });
+    }
+
+    const targetUser = await User.findById(targetId);
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (!req.user.blockedUsers.some((id) => String(id) === String(targetId))) {
+      req.user.blockedUsers.push(targetId);
+    }
+    await req.user.save();
+
+    // Cancel/remove any existing match between the two users (pending or accepted).
+    await Match.deleteMany({
+      $or: [
+        { userA: req.user._id, userB: targetId },
+        { userA: targetId, userB: req.user._id },
+      ],
+    });
+
+    return res.json({ success: true, message: 'User blocked', data: {} });
+  } catch (error) {
+    console.error(`Block user error: ${error.message}`);
+    return res.status(500).json({ success: false, message: 'Unable to block user' });
+  }
+};
+
+const unblockUser = async (req, res) => {
+  try {
+    const targetId = req.params.userId;
+    req.user.blockedUsers = req.user.blockedUsers.filter((id) => String(id) !== String(targetId));
+    await req.user.save();
+    return res.json({ success: true, message: 'User unblocked', data: {} });
+  } catch (error) {
+    console.error(`Unblock user error: ${error.message}`);
+    return res.status(500).json({ success: false, message: 'Unable to unblock user' });
+  }
+};
+
+module.exports = { blockUser, unblockUser, updateProfile };

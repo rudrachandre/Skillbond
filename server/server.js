@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const express = require('express');
 const { createServer } = require('http');
 const jwt = require('jsonwebtoken');
+const path = require('path');
 const { Server } = require('socket.io');
 const connectDB = require('./config/db');
 const creditRoutes = require('./routes/creditRoutes');
@@ -11,12 +12,14 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const authRoutes = require('./routes/authRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const matchRoutes = require('./routes/matchRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 const Message = require('./models/Message');
 const { canAccessMatch } = require('./controllers/messageController');
 const { createNotification, isUserInRoom, setSocketServer } = require('./utils/notify');
 const sessionRoutes = require('./routes/sessionRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const userRoutes = require('./routes/userRoutes');
+const reportRoutes = require('./routes/reportRoutes');
 
 dotenv.config();
 connectDB();
@@ -28,6 +31,7 @@ const port = process.env.PORT || 5000;
 
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
@@ -38,6 +42,8 @@ app.use('/api/match', matchRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/reports', reportRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });

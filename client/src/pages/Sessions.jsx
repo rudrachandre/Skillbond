@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../api/axios'
 import Navbar from '../components/Navbar'
+import TimePicker from '../components/TimePicker'
 import { useAuth } from '../context/useAuth'
 
 const statusStyles = {
@@ -15,7 +16,19 @@ const statusStyles = {
 
 const formatDate = (date) => new Date(date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
 const getOtherUser = (match, userId) => String(match.userA?._id) === String(userId) ? match.userB : match.userA
-const localDateTime = () => new Date(Date.now() + 3600000).toISOString().slice(0, 16)
+
+const pad = (number) => String(number).padStart(2, '0')
+const todayDate = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+const defaultSchedule = () => {
+  const d = new Date(Date.now() + 3600000) // current time + 1 hour
+  return {
+    date: todayDate(),
+    time: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
+  }
+}
 
 function SessionCard({ session, user, onReview, onUpdate, updatingId }) {
   const otherUser = getOtherUser(session, user.id)
@@ -43,7 +56,11 @@ function Sessions() {
   const [reviewComment, setReviewComment] = useState('')
   const [isSubmittingReview, setIsSubmittingReview] = useState(false)
   const [error, setError] = useState('')
-  const [form, setForm] = useState({ matchId: '', skillTaught: '', scheduledAt: localDateTime(), duration: '60' })
+  const [form, setForm] = useState({ matchId: '', skillTaught: '', duration: '60' })
+
+  const initialSchedule = defaultSchedule()
+  const [date, setDate] = useState(initialSchedule.date)
+  const [time, setTime] = useState(initialSchedule.time)
 
   const loadData = async () => {
     setError('')
@@ -65,7 +82,10 @@ function Sessions() {
   const availableSkills = user?.skillsOffered || []
 
   const openModal = () => {
-    setForm({ matchId: connections[0]?._id || '', skillTaught: availableSkills[0]?.skill || '', scheduledAt: localDateTime(), duration: '60' })
+    const schedule = defaultSchedule()
+    setForm({ matchId: connections[0]?._id || '', skillTaught: availableSkills[0]?.skill || '', duration: '60' })
+    setDate(schedule.date)
+    setTime(schedule.time)
     setIsModalOpen(true)
   }
 
@@ -73,7 +93,8 @@ function Sessions() {
     event.preventDefault()
     setError('')
     try {
-      await api.post('/sessions', form)
+      const scheduledAt = `${date}T${time}`
+      await api.post('/sessions', { ...form, scheduledAt })
       setIsModalOpen(false)
       await loadData()
     } catch (requestError) {
@@ -125,8 +146,8 @@ function Sessions() {
         {error && <p className="mt-8 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</p>}
         {isLoading ? <div className="py-20 text-center text-slate-500">Loading your sessions...</div> : <div className="mt-12 space-y-12">{sections.map(([title, items]) => <section aria-labelledby={`${title}-heading`} key={title}><div className="flex items-baseline justify-between gap-4"><h2 className="font-display text-3xl font-bold text-slate-950" id={`${title}-heading`}>{title}</h2><span className="text-sm font-semibold text-slate-500">{items.length}</span></div>{items.length ? <div className="mt-6 grid gap-5 md:grid-cols-2">{items.map((session) => <SessionCard key={session._id} onReview={setReviewSession} onUpdate={updateSession} session={session} updatingId={updatingId} user={user} />)}</div> : <p className="mt-5 text-slate-500">No {title.toLowerCase()} sessions.</p>}</section>)}</div>}
       </main>
-      {isModalOpen && <div className="fixed inset-0 z-20 flex items-center justify-center bg-slate-950/40 p-4" role="presentation"><motion.div animate={{ opacity: 1, y: 0 }} className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl md:p-8" initial={{ opacity: 0, y: 12 }} role="dialog" aria-modal="true" aria-labelledby="schedule-heading"><div className="flex items-start justify-between gap-4"><div><p className="eyebrow text-amber-600">New session</p><h2 className="font-display mt-2 text-3xl font-bold text-slate-950" id="schedule-heading">Schedule an exchange</h2></div><button className="text-sm font-semibold text-slate-400 hover:text-slate-950" onClick={() => setIsModalOpen(false)} type="button">Close</button></div><form className="mt-8 space-y-5" onSubmit={createSession}><label className="field-label" htmlFor="matchId">Connection<select className="field-input" id="matchId" name="matchId" onChange={updateForm} required value={form.matchId}><option value="">Choose a connection</option>{connections.map((match) => <option key={match._id} value={match._id}>{getOtherUser(match, user.id)?.name}</option>)}</select></label><label className="field-label" htmlFor="skillTaught">Skill being taught{availableSkills.length ? <select className="field-input" id="skillTaught" name="skillTaught" onChange={updateForm} required value={form.skillTaught}><option value="">Choose a skill</option>{availableSkills.map(({ skill }) => <option key={skill}>{skill}</option>)}</select> : <input className="field-input" id="skillTaught" name="skillTaught" onChange={updateForm} required type="text" value={form.skillTaught} />}</label><label className="field-label" htmlFor="scheduledAt">Date and time<input className="field-input" id="scheduledAt" min={localDateTime()} name="scheduledAt" onChange={updateForm} required type="datetime-local" value={form.scheduledAt} /></label><label className="field-label" htmlFor="duration">Duration<select className="field-input" id="duration" name="duration" onChange={updateForm} value={form.duration}><option value="30">30 minutes</option><option value="60">60 minutes</option><option value="90">90 minutes</option><option value="120">120 minutes</option></select></label><div className="flex justify-end gap-3 pt-3"><button className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-950" onClick={() => setIsModalOpen(false)} type="button">Cancel</button><button className="primary-button !w-auto px-5" disabled={!selectedConnection} type="submit">Request Session</button></div></form></motion.div></div>}
-      {reviewSession && <div className="fixed inset-0 z-20 flex items-center justify-center bg-slate-950/40 p-4" role="presentation"><motion.div animate={{ opacity: 1, y: 0 }} className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl md:p-8" initial={{ opacity: 0, y: 12 }} role="dialog" aria-modal="true" aria-labelledby="review-heading"><div className="flex items-start justify-between gap-4"><div><p className="eyebrow text-amber-600">Completed exchange</p><h2 className="font-display mt-2 text-3xl font-bold text-slate-950" id="review-heading">Leave a review</h2></div><button className="text-sm font-semibold text-slate-400 hover:text-slate-950" onClick={() => setReviewSession(null)} type="button">Close</button></div><form className="mt-7" onSubmit={submitReview}><div className="flex gap-2" aria-label="Rating"><span className="sr-only">Choose a rating from 1 to 5 stars</span>{[1, 2, 3, 4, 5].map((rating) => <button aria-label={`${rating} star${rating > 1 ? 's' : ''}`} className="rounded-md p-1 text-amber-400 transition hover:bg-amber-50" key={rating} onClick={() => setReviewRating(rating)} type="button"><Star fill={rating <= reviewRating ? 'currentColor' : 'none'} size={30} strokeWidth={1.5} /></button>)}</div><textarea aria-label="Review comment" className="field-input mt-6 min-h-32 resize-y" maxLength="1000" onChange={(event) => setReviewComment(event.target.value)} placeholder="What made this exchange useful?" value={reviewComment} /><button className="primary-button mt-5" disabled={!reviewRating || isSubmittingReview} type="submit">{isSubmittingReview ? 'Submitting...' : 'Submit review'}</button></form></motion.div></div>}
+      {isModalOpen && <div className="fixed inset-0 z-20 flex items-center justify-center bg-slate-950/40 p-4" role="presentation"><motion.div animate={{ opacity: 1, y: 0 }} className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white p-6 shadow-xl md:p-8" initial={{ opacity: 0, y: 12 }} role="dialog" aria-modal="true" aria-labelledby="schedule-heading"><div className="flex items-start justify-between gap-4"><div><p className="eyebrow text-amber-600">New session</p><h2 className="font-display mt-2 text-3xl font-bold text-slate-950" id="schedule-heading">Schedule an exchange</h2></div><button className="text-sm font-semibold text-slate-400 hover:text-slate-950" onClick={() => setIsModalOpen(false)} type="button">Close</button></div><form className="mt-8 space-y-5" onSubmit={createSession}><label className="field-label" htmlFor="matchId">Connection<select className="field-input" id="matchId" name="matchId" onChange={updateForm} required value={form.matchId}><option value="">Choose a connection</option>{connections.map((match) => <option key={match._id} value={match._id}>{getOtherUser(match, user.id)?.name}</option>)}</select></label><label className="field-label" htmlFor="skillTaught">Skill being taught{availableSkills.length ? <select className="field-input" id="skillTaught" name="skillTaught" onChange={updateForm} required value={form.skillTaught}><option value="">Choose a skill</option>{availableSkills.map(({ skill }) => <option key={skill}>{skill}</option>)}</select> : <input className="field-input" id="skillTaught" name="skillTaught" onChange={updateForm} required type="text" value={form.skillTaught} />}</label><label className="field-label" htmlFor="date">Date<input className="field-input" id="date" min={todayDate()} name="date" onChange={(event) => setDate(event.target.value)} required type="date" value={date} /></label>{date && <label className="field-label" htmlFor="time">Time<TimePicker onChange={setTime} value={time} /></label>}<label className="field-label" htmlFor="duration">Duration<select className="field-input" id="duration" name="duration" onChange={updateForm} value={form.duration}><option value="30">30 minutes</option><option value="60">60 minutes</option><option value="90">90 minutes</option><option value="120">120 minutes</option></select></label><div className="flex justify-end gap-3 pt-3"><button className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-950" onClick={() => setIsModalOpen(false)} type="button">Cancel</button><button className="primary-button !w-auto px-5" disabled={!selectedConnection} type="submit">Request Session</button></div></form></motion.div></div>}
+      {reviewSession && <div className="fixed inset-0 z-20 flex items-center justify-center bg-slate-950/40 p-4" role="presentation"><motion.div animate={{ opacity: 1, y: 0 }} className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white p-6 shadow-xl md:p-8" initial={{ opacity: 0, y: 12 }} role="dialog" aria-modal="true" aria-labelledby="review-heading"><div className="flex items-start justify-between gap-4"><div><p className="eyebrow text-amber-600">Completed exchange</p><h2 className="font-display mt-2 text-3xl font-bold text-slate-950" id="review-heading">Leave a review</h2></div><button className="text-sm font-semibold text-slate-400 hover:text-slate-950" onClick={() => setReviewSession(null)} type="button">Close</button></div><form className="mt-7" onSubmit={submitReview}><div className="flex gap-2" aria-label="Rating"><span className="sr-only">Choose a rating from 1 to 5 stars</span>{[1, 2, 3, 4, 5].map((rating) => <button aria-label={`${rating} star${rating > 1 ? 's' : ''}`} className="rounded-md p-1 text-amber-400 transition hover:bg-amber-50" key={rating} onClick={() => setReviewRating(rating)} type="button"><Star fill={rating <= reviewRating ? 'currentColor' : 'none'} size={30} strokeWidth={1.5} /></button>)}</div><textarea aria-label="Review comment" className="field-input mt-6 min-h-32 resize-y" maxLength="1000" onChange={(event) => setReviewComment(event.target.value)} placeholder="What made this exchange useful?" value={reviewComment} /><button className="primary-button mt-5" disabled={!reviewRating || isSubmittingReview} type="submit">{isSubmittingReview ? 'Submitting...' : 'Submit review'}</button></form></motion.div></div>}
     </div>
   )
 }

@@ -36,6 +36,12 @@ function Matches() {
   const [connections, setConnections] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [respondingId, setRespondingId] = useState(null)
+  const [unmatchingId, setUnmatchingId] = useState(null)
+  const [blockingId, setBlockingId] = useState(null)
+  const [reportingId, setReportingId] = useState(null)
+  const [reportReason, setReportReason] = useState('')
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false)
+  const [reportMessage, setReportMessage] = useState('')
   const [error, setError] = useState('')
 
   const loadMatches = async () => {
@@ -71,6 +77,53 @@ function Matches() {
     }
   }
 
+  const unmatch = async (match) => {
+    if (!window.confirm(`Remove ${MatchedUser({ match, currentUserId: user.id })?.name} from your connections?`)) return
+    setUnmatchingId(match._id)
+    setError('')
+    try {
+      await api.delete(`/match/${match._id}`)
+      setConnections((current) => current.filter((item) => item._id !== match._id))
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Unable to remove connection.')
+    } finally {
+      setUnmatchingId(null)
+    }
+  }
+
+  const blockConnection = async (match) => {
+    const matchedUser = MatchedUser({ match, currentUserId: user.id })
+    if (!window.confirm(`Block ${matchedUser?.name}? This removes the connection and hides them from your Discover.`)) return
+    setBlockingId(match._id)
+    setError('')
+    try {
+      await api.post(`/users/block/${matchedUser._id}`)
+      setConnections((current) => current.filter((item) => item._id !== match._id))
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Unable to block user.')
+    } finally {
+      setBlockingId(null)
+    }
+  }
+
+  const submitReport = async (match) => {
+    const matchedUser = MatchedUser({ match, currentUserId: user.id })
+    if (!reportReason.trim()) return
+    setIsSubmittingReport(true)
+    setError('')
+    setReportMessage('')
+    try {
+      await api.post('/reports', { reportedUser: matchedUser._id, reason: reportReason.trim() })
+      setReportMessage('Report submitted')
+      setReportingId(null)
+      setReportReason('')
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Unable to submit report.')
+    } finally {
+      setIsSubmittingReport(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       <Navbar />
@@ -83,7 +136,7 @@ function Matches() {
           </section>
           {!isLoading && !error && pending.length === 0 && connections.length === 0 && <Link className="primary-button mt-8 inline-block !w-auto px-5" to="/discover">Find Connections</Link>}
           <section aria-labelledby="connections-heading"><div className="flex items-baseline justify-between gap-4"><h2 className="font-display text-3xl font-bold text-slate-950" id="connections-heading">My Connections</h2><span className="text-sm font-semibold text-slate-500">{connections.length}</span></div>
-            {connections.length === 0 ? <p className="mt-5 text-slate-500">Accepted connections will appear here.</p> : <div className="mt-6 grid gap-5 md:grid-cols-2">{connections.map((match) => { const matchedUser = MatchedUser({ match, currentUserId: user.id }); return <motion.article animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm" initial={{ opacity: 0, y: 12 }} key={match._id} transition={{ duration: 0.3 }}><div className="flex items-center justify-between gap-4"><div className="flex min-w-0 items-center gap-4"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-300 font-display text-lg font-bold text-slate-950">{matchedUser?.name?.slice(0, 1).toUpperCase()}</div><div className="min-w-0"><h3 className="truncate font-display text-xl font-bold text-slate-950">{matchedUser?.name}</h3><p className="text-sm text-slate-500">{match.matchScore}% match</p></div></div><Link className="shrink-0 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-950 hover:text-slate-950" to={`/chat/${match._id}`}>Message</Link></div><SharedSkills currentUserId={user.id} match={match} /></motion.article>})}</div>}
+            {connections.length === 0 ? <p className="mt-5 text-slate-500">Accepted connections will appear here.</p> : <div className="mt-6 grid gap-5 md:grid-cols-2">{connections.map((match) => { const matchedUser = MatchedUser({ match, currentUserId: user.id }); return <motion.article animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm" initial={{ opacity: 0, y: 12 }} key={match._id} transition={{ duration: 0.3 }}><div className="flex items-center justify-between gap-4"><div className="flex min-w-0 items-center gap-4"><Link className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-300 font-display text-lg font-bold text-slate-950 hover:opacity-80" to={`/profile/${matchedUser?._id}`}>{matchedUser?.name?.slice(0, 1).toUpperCase()}</Link><div className="min-w-0"><Link className="block truncate font-display text-xl font-bold text-slate-950 hover:underline" to={`/profile/${matchedUser?._id}`}>{matchedUser?.name}</Link><p className="text-sm text-slate-500">{match.matchScore}% match</p></div></div><div className="flex shrink-0 items-center gap-2"><Link className="shrink-0 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-950 hover:text-slate-950" to={`/chat/${match._id}`}>Message</Link><button className="shrink-0 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-500 transition hover:border-red-300 hover:text-red-600" disabled={unmatchingId === match._id} onClick={() => unmatch(match)} type="button">{unmatchingId === match._id ? 'Removing...' : 'Unmatch'}</button><button className="shrink-0 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50" disabled={blockingId === match._id} onClick={() => blockConnection(match)} type="button">{blockingId === match._id ? 'Blocking...' : 'Block'}</button>{reportingId === match._id ? <button className="shrink-0 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-500 transition hover:border-slate-950" disabled={isSubmittingReport} onClick={() => { setReportingId(null); setReportReason(''); setReportMessage('') }} type="button">Cancel</button> : <button className="shrink-0 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-500 transition hover:border-slate-950" onClick={() => setReportingId(match._id)} type="button">Report</button>}</div></div>{reportingId === match._id && <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4"><p className="text-sm font-semibold text-slate-700">Report {matchedUser?.name}</p><textarea aria-label="Report reason" className="field-input mt-2 min-h-20 resize-y" onChange={(event) => setReportReason(event.target.value)} placeholder="Tell us what happened..." value={reportReason} /><button className="primary-button mt-3 !w-auto px-4" disabled={isSubmittingReport || !reportReason.trim()} onClick={() => submitReport(match)} type="button">{isSubmittingReport ? 'Submitting...' : 'Submit report'}</button>{reportMessage && <p className="mt-2 text-sm text-green-700">{reportMessage}</p>}</div>}<SharedSkills currentUserId={user.id} match={match} /></motion.article>})}</div>}
           </section>
         </div>}
       </main>
