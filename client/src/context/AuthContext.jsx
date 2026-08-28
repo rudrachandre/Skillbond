@@ -10,12 +10,12 @@ export function AuthProvider({ children }) {
   })
   const [isLoading, setIsLoading] = useState(Boolean(token))
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('skillbond_token')
     localStorage.removeItem('skillbond_user')
     setToken(null)
     setUser(null)
-  }
+  }, [])
 
   const updateUser = useCallback((nextUser) => {
     setUser(nextUser)
@@ -36,7 +36,28 @@ export function AuthProvider({ children }) {
         logout()
       })
       .finally(() => setIsLoading(false))
-  }, [token])
+  }, [token, logout])
+
+  // Multi-tab sync: the `storage` event fires ONLY in other tabs when this
+  // tab's localStorage is changed by a different tab. It does not fire in the
+  // tab that made the change, so single-tab behavior is unaffected.
+  useEffect(() => {
+    const handleStorage = (event) => {
+      if (event.key !== 'skillbond_token') {
+        return
+      }
+      if (event.newValue === null) {
+        // Token was removed in another tab -> this session is over here too.
+        logout()
+      } else if (event.newValue !== token) {
+        // A different session took over -> re-sync via the token effect above,
+        // which re-fetches /auth/me with the new token (or logs out on failure).
+        setToken(event.newValue)
+      }
+    }
+    window.addEventListener('storage', handleStorage)
+    return () => window.removeEventListener('storage', handleStorage)
+  }, [token, logout])
 
   const authenticate = (response) => {
     const { token: nextToken, user: nextUser } = response.data
