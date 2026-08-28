@@ -27,12 +27,28 @@ const getMatches = async (req, res) => {
     const currentUser = req.user;
     const offeredByCurrentUser = skillNames(currentUser.skillsOffered);
     const wantedByCurrentUser = skillNames(currentUser.skillsWanted);
+
+    // Collect user IDs the current user already has a pending or accepted
+    // match with — those should not appear in Discover again. 'rejected'
+    // matches are deliberately NOT excluded (they can be shown again).
+    const existingMatches = await Match.find({
+      status: { $in: ['pending', 'accepted'] },
+      $or: [{ userA: currentUser._id }, { userB: currentUser._id }],
+    }).select('userA userB');
+    const alreadyMatched = new Set(
+      existingMatches.map((match) =>
+        String(match.userA) === String(currentUser._id) ? String(match.userB) : String(match.userA),
+      ),
+    );
+
     const users = await User.find({ _id: { $ne: currentUser._id, $nin: currentUser.blockedUsers || [] } }).select('-password');
 
     const matches = users
       .map((user) => {
         // Mutual exclusion: also skip users who have blocked the current user.
         if ((user.blockedUsers || []).some((id) => String(id) === String(currentUser._id))) return null;
+        // Skip users the current user already has a pending/accepted match with.
+        if (alreadyMatched.has(String(user._id))) return null;
         const offeredByCandidate = skillNames(user.skillsOffered);
         const wantedByCandidate = skillNames(user.skillsWanted);
         const teachableOverlap = overlap(offeredByCandidate, wantedByCurrentUser);
