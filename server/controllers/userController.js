@@ -1,5 +1,6 @@
 const Match = require('../models/Match');
 const User = require('../models/User');
+const { isOnline } = require('../utils/notify');
 
 const updateProfile = async (req, res) => {
   try {
@@ -100,4 +101,21 @@ const unblockUser = async (req, res) => {
   }
 };
 
-module.exports = { blockUser, unblockUser, updateProfile };
+const getStatus = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId).select('lastActive name');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    return res.json({
+      success: true,
+      message: 'User status retrieved',
+      data: { online: isOnline(req.params.userId), lastActive: user.lastActive },
+    });
+  } catch (error) {
+    console.error(`User status error: ${error.message}`);
+    return res.status(500).json({ success: false, message: 'Unable to retrieve user status' });
+  }
+};
+
+module.exports = { blockUser, getStatus, unblockUser, updateProfile };

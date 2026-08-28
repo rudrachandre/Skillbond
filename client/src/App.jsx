@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './context/useAuth'
 import Dashboard from './pages/Dashboard'
 import Chat from './pages/Chat'
+import ChatInbox from './pages/ChatInbox'
 import CreditHistory from './pages/CreditHistory'
 import EditProfile from './pages/EditProfile'
 import Login from './pages/Login'
@@ -33,6 +34,14 @@ function App() {
         element={
           <ProtectedRoute>
             <Chat />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/messages"
+        element={
+          <ProtectedRoute>
+            <ChatInbox />
           </ProtectedRoute>
         }
       />

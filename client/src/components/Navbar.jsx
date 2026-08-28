@@ -46,6 +46,9 @@ function Navbar() {
         <button className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-amber-50 hover:text-slate-950" onClick={() => navigate('/matches')} type="button">
           Matches
         </button>
+        <button className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-amber-50 hover:text-slate-950" onClick={() => navigate('/messages')} type="button">
+          Messages
+        </button>
         <button className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-amber-50 hover:text-slate-950" onClick={() => navigate('/sessions')} type="button">
           Sessions
         </button>

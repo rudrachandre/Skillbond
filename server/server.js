@@ -14,8 +14,9 @@ const messageRoutes = require('./routes/messageRoutes');
 const matchRoutes = require('./routes/matchRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const Message = require('./models/Message');
+const User = require('./models/User');
 const { canAccessMatch } = require('./controllers/messageController');
-const { createNotification, isUserInRoom, setSocketServer } = require('./utils/notify');
+const { createNotification, isUserInRoom, markOffline, markOnline, setSocketServer } = require('./utils/notify');
 const sessionRoutes = require('./routes/sessionRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -55,6 +56,10 @@ const io = new Server(httpServer, {
 });
 setSocketServer(io);
 
+const markUserActive = (userId) => {
+  User.updateOne({ _id: userId }, { lastActive: new Date() }).catch((error) => console.error(`lastActive update error: ${error.message}`));
+};
+
 io.use((socket, next) => {
   try {
     if (!process.env.JWT_SECRET) return next(new Error('JWT_SECRET is not configured'));
@@ -69,7 +74,10 @@ io.use((socket, next) => {
 });
 
 io.on('connection', (socket) => {
-  socket.join(String(socket.user._id));
+  const userId = String(socket.user._id);
+  socket.join(userId);
+  markOnline(userId);
+  markUserActive(socket.user._id);
 
   socket.on('join_chat', async (matchId) => {
     try {
@@ -110,7 +118,25 @@ io.on('connection', (socket) => {
     }
   });
 
+  const relayTyping = (eventName) => async (matchId) => {
+    try {
+      const match = await canAccessMatch(matchId, socket.user._id);
+      if (!match) return;
+      // Relay only to the other participant in this specific chat room,
+      // excluding the sender (broadcast to the room does not hit this socket).
+      socket.broadcast.to(String(match._id)).emit(eventName, { matchId: String(match._id), userId: String(socket.user._id) });
+    } catch (error) {
+      // Ignore relay errors (non-critical typing signal).
+    }
+  };
+
+  socket.on('typing', relayTyping('typing'));
+  socket.on('stop_typing', relayTyping('stop_typing'));
+
   socket.on('disconnect', () => {
+    const disconnectingId = String(socket.user._id);
+    markOffline(disconnectingId);
+    markUserActive(socket.user._id);
     console.log(`Chat socket disconnected: ${socket.id}`);
   });
 });
