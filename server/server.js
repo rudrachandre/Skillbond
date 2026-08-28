@@ -84,6 +84,17 @@ io.on('connection', (socket) => {
       const match = await canAccessMatch(matchId, socket.user._id);
       if (!match) return socket.emit('chat_error', 'Accepted match not found');
       socket.join(String(match._id));
+
+      // Mark all messages in this match NOT sent by this user as read
+      // (the schema has no receiver field; recipient = anyone who isn't the sender).
+      const result = await Message.updateMany(
+        { matchId: match._id, sender: { $ne: socket.user._id }, isRead: false },
+        { $set: { isRead: true } },
+      );
+      if (result.modifiedCount > 0) {
+        // Notify the original sender(s) in the room (this socket is excluded by broadcast).
+        socket.broadcast.to(String(match._id)).emit('messages_read', { matchId: String(match._id) });
+      }
     } catch (error) {
       socket.emit('chat_error', 'Unable to join chat');
     }
@@ -93,17 +104,19 @@ io.on('connection', (socket) => {
     socket.leave(String(matchId));
   });
 
-  socket.on('send_message', async ({ matchId, content, clientMessageId }) => {
+  socket.on('send_message', async ({ matchId, content, attachmentUrl, attachmentType, clientMessageId }) => {
     try {
       const cleanContent = content?.trim();
       const match = await canAccessMatch(matchId, socket.user._id);
       if (!match) return socket.emit('chat_error', 'Accepted match not found');
-      if (!cleanContent) return socket.emit('chat_error', 'Message cannot be empty');
+      const hasAttachment = Boolean(attachmentUrl) && ['image', 'audio'].includes(attachmentType);
+      if (!cleanContent && !hasAttachment) return socket.emit('chat_error', 'Message cannot be empty');
 
       const message = await Message.create({
         matchId: match._id,
         sender: socket.user._id,
-        content: cleanContent,
+        content: cleanContent || '',
+        ...(hasAttachment ? { attachmentUrl, attachmentType } : {}),
       });
 
       io.to(String(match._id)).emit('receive_message', {

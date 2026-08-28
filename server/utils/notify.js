@@ -7,6 +7,8 @@ const setSocketServer = (socketServer) => {
   io = socketServer;
 };
 
+const getSocketServer = () => io;
+
 const markOnline = (userId) => {
   onlineUsers.add(String(userId));
 };
@@ -29,4 +31,4 @@ const isUserInRoom = (userId, roomId) => {
   return [...userSockets].some((socketId) => io.sockets.sockets.get(socketId)?.rooms.has(String(roomId)));
 };
 
-module.exports = { createNotification, isOnline, isUserInRoom, markOffline, markOnline, setSocketServer };
+module.exports = { createNotification, getSocketServer, isOnline, isUserInRoom, markOffline, markOnline, setSocketServer };

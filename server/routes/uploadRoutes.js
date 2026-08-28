@@ -55,6 +55,19 @@ router.post('/avatar', protect, (req, res) => {
   });
 });
 
+router.post('/chat-image', protect, (req, res) => {
+  upload.single('file')(req, res, (uploadError) => {
+    if (uploadError) {
+      return res.status(400).json({ success: false, message: uploadError.message });
+    }
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+    const url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    return res.status(201).json({ success: true, message: 'Image uploaded', data: { url } });
+  });
+});
+
 router.post('/chat-audio', protect, (req, res) => {
   audioUpload.single('file')(req, res, (uploadError) => {
     if (uploadError) {

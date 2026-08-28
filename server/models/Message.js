@@ -21,9 +21,17 @@ const messageSchema = new mongoose.Schema({
   attachmentUrl: {
     type: String,
   },
-  attachmentType: {
+    attachmentType: {
     type: String,
     enum: ['image', 'audio'],
+  },
+  isRead: {
+    type: Boolean,
+    default: false,
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false,
   },
   createdAt: {
     type: Date,

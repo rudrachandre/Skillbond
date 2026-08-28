@@ -198,12 +198,11 @@ function Chat() {
     const form = new FormData()
     form.append('file', file)
     try {
-      const { data } = await api.post('/upload/chat-image', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      const { data } = await api.post('/upload/chat-image', form)
       return data?.data?.url
     } catch (err) {
       console.error('Image upload failed', err)
+      return null
     }
   }
 
@@ -211,12 +210,11 @@ function Chat() {
     const form = new FormData()
     form.append('file', blob, 'recording.webm')
     try {
-      const { data } = await api.post('/upload/chat-audio', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      const { data } = await api.post('/upload/chat-audio', form)
       return data?.data?.url
     } catch (err) {
       console.error('Audio upload failed', err)
+      return null
     }
   }
 
@@ -273,6 +271,7 @@ function Chat() {
 
   const handleImage = async (event) => {
     const file = event.target.files?.[0]
+    event.target.value = ''
     if (!file) return
     setUploading(true)
     try {
