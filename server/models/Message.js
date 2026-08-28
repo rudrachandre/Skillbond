@@ -12,11 +12,18 @@ const messageSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
-  content: {
+    content: {
     type: String,
     required: true,
     trim: true,
     maxlength: 2000,
+  },
+  attachmentUrl: {
+    type: String,
+  },
+  attachmentType: {
+    type: String,
+    enum: ['image', 'audio'],
   },
   createdAt: {
     type: Date,

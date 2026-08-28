@@ -28,6 +28,20 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter });
 
+const audioFileFilter = (req, file, cb) => {
+  if (file.mimetype && (file.mimetype.startsWith('audio/') || file.mimetype.startsWith('video/'))) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only audio uploads are allowed'), false);
+  }
+};
+
+const audioUpload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: audioFileFilter,
+});
+
 router.post('/avatar', protect, (req, res) => {
   upload.single('avatar')(req, res, (uploadError) => {
     if (uploadError) {
@@ -38,6 +52,19 @@ router.post('/avatar', protect, (req, res) => {
     }
     const url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
     return res.status(201).json({ success: true, message: 'Avatar uploaded', data: { url } });
+  });
+});
+
+router.post('/chat-audio', protect, (req, res) => {
+  audioUpload.single('file')(req, res, (uploadError) => {
+    if (uploadError) {
+      return res.status(400).json({ success: false, message: uploadError.message });
+    }
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+    const url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    return res.status(201).json({ success: true, message: 'Audio uploaded', data: { url } });
   });
 });
 

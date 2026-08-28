@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { Check, CheckCheck, Image, Mic, Search, Trash2 } from 'lucide-react'
 import api from '../api/axios'
 import Navbar from '../components/Navbar'
 import socket from '../socket'
@@ -28,6 +29,13 @@ function Chat() {
   const [otherIsTyping, setOtherIsTyping] = useState(false)
   const [otherUser, setOtherUser] = useState(null)
   const [status, setStatus] = useState({ online: false, lastActive: null })
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [isRecording, setIsRecording] = useState(false)
+  const [recordError, setRecordError] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const mediaRecorderRef = useRef(null)
+  const fileInputRef = useRef(null)
   const messagesEndRef = useRef(null)
   const typingStopRef = useRef(null)
   const typingSentRef = useRef(false)
@@ -85,8 +93,20 @@ function Chat() {
         socket.auth = { token: localStorage.getItem('skillbond_token') }
         socket.on('receive_message', handleMessage)
         socket.on('chat_error', handleSocketError)
-        socket.on('typing', showTyping)
+                socket.on('typing', showTyping)
         socket.on('stop_typing', hideTyping)
+        socket.on('messages_read', (payload) => {
+          if (!payload || String(payload.matchId) !== String(matchId)) return
+          setMessages((current) => current.map((m) =>
+            senderId(m.sender) === String(user.id) ? { ...m, isRead: true } : m
+          ))
+        })
+        socket.on('message_deleted', (payload) => {
+          if (!payload || String(payload.matchId) !== String(matchId)) return
+          setMessages((current) => current.map((m) =>
+            String(m._id) === String(payload.messageId) ? { ...m, isDeleted: true } : m
+          ))
+        })
         socket.connect()
         socket.emit('join_chat', matchId)
       } catch (requestError) {
@@ -102,8 +122,10 @@ function Chat() {
       active = false
       socket.off('receive_message', handleMessage)
       socket.off('chat_error', handleSocketError)
-      socket.off('typing', showTyping)
+            socket.off('typing', showTyping)
       socket.off('stop_typing', hideTyping)
+      socket.off('messages_read')
+      socket.off('message_deleted')
       socket.emit('leave_chat', matchId)
     }
   }, [matchId, user.id])
@@ -156,28 +178,240 @@ function Chat() {
       createdAt: new Date().toISOString(),
       sender: user.id,
     }])
-    socket.emit('send_message', { clientMessageId, content: cleanContent, matchId })
+        socket.emit('send_message', { clientMessageId, content: cleanContent, matchId })
     setContent('')
     // Sending a message stops the typing indicator in both directions.
     clearTimeout(typingStopRef.current)
     stopTypingSignal()
   }
 
+  const deleteMessage = async (messageId) => {
+    try {
+      await api.delete(`/messages/${messageId}`)
+      // socket 'message_deleted' handler updates remote tab in real time.
+    } catch (err) {
+      console.error('Delete message failed', err)
+    }
+  }
+
+  const uploadImage = async (file) => {
+    const form = new FormData()
+    form.append('file', file)
+    try {
+      const { data } = await api.post('/upload/chat-image', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      return data?.data?.url
+    } catch (err) {
+      console.error('Image upload failed', err)
+    }
+  }
+
+  const uploadAudio = async (blob) => {
+    const form = new FormData()
+    form.append('file', blob, 'recording.webm')
+    try {
+      const { data } = await api.post('/upload/chat-audio', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      return data?.data?.url
+    } catch (err) {
+      console.error('Audio upload failed', err)
+    }
+  }
+
+
+  const sendMessageWithAttachment = async (attachmentUrl, attachmentType) => {
+    if (!socket.connected) return
+    const clientMessageId = `${Date.now()}-${Math.random()}`
+    setMessages((current) => [...current, {
+      clientMessageId,
+      content: '',
+      createdAt: new Date().toISOString(),
+      sender: user.id,
+      attachmentUrl,
+      attachmentType,
+    }])
+    socket.emit('send_message', { clientMessageId, content: '', matchId, attachmentUrl, attachmentType })
+  }
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const recorder = new MediaRecorder(stream)
+      mediaRecorderRef.current = recorder
+      const chunks = []
+      recorder.ondataavailable = (e) => chunks.push(e.data)
+      recorder.onstop = async () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' })
+        setUploading(true)
+        try {
+          const url = await uploadAudio(blob)
+          if (url) await sendMessageWithAttachment(url, 'audio')
+        } catch (err) {
+          console.error('Audio upload failed', err)
+        } finally {
+          setUploading(false)
+        }
+      }
+      recorder.start()
+      setIsRecording(true)
+      setRecordError('')
+    } catch (err) {
+      setRecordError(err.message === 'NotAllowedError'
+        ? 'Microphone access was denied. Grant permission to record.'
+        : 'Could not access microphone.')
+    }
+  }
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop()
+      setIsRecording(false)
+    }
+  }
+
+  const handleImage = async (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const url = await uploadImage(file)
+      if (url) await sendMessageWithAttachment(url, 'image')
+    } catch (err) {
+      console.error('Image upload failed', err)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+    const openSearch = () => setSearchOpen(true)
+  const displayedMessages = searchTerm.trim()
+    ? messages.filter((m) => (m.content || '').toLowerCase().includes(searchTerm.toLowerCase()))
+    : messages
+
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
       <Navbar />
       <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-8 md:px-10 md:py-12">
-        <div className="mb-6 flex items-center justify-between gap-4"><div><p className="eyebrow text-amber-600">Private conversation</p><h1 className="font-display mt-3 text-4xl font-bold tracking-tight text-slate-950">Chat</h1></div><Link className="text-sm font-semibold text-slate-600 underline decoration-amber-400 decoration-2 underline-offset-4" to="/matches">Back to matches</Link></div>
+        <div className="mb-6 flex items-center justify-between gap-4"><div><p className="eyebrow text-amber-600">Private conversation</p><h1 className="font-display mt-3 text-4xl font-bold tracking-tight text-slate-950">Chat</h1></div><div className="flex items-center gap-3"><button aria-label="Search messages" className="!w-auto px-2 text-slate-500 hover:text-slate-700" onClick={openSearch} type="button"><Search size={20} /></button><Link className="text-sm font-semibold text-slate-600 underline decoration-amber-400 decoration-2 underline-offset-4" to="/matches">Back to matches</Link></div></div>
+        {searchOpen && (
+          <div className="mb-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
+            <input
+              aria-label="Search messages"
+              className="field-input mt-0 flex-1"
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Escape') setSearchOpen(false) }}
+              placeholder="Search messages..."
+              type="text"
+              value={searchTerm}
+            />
+            <button
+              aria-label="Close search"
+              className="!w-auto px-2 text-slate-500 hover:text-slate-700"
+              onClick={() => { setSearchOpen(false); setSearchTerm('') }}
+              type="button"
+            >
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
+        )}
         <section className="flex min-h-[28rem] flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm" aria-label="Chat conversation">
-          {otherUser && <div className="flex items-center gap-3 border-b border-slate-200 bg-white px-5 py-3"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-950 font-display text-base font-bold text-amber-300">{otherUser.name?.slice(0, 1).toUpperCase()}</div><div><p className="font-display text-base font-bold text-slate-950">{otherUser.name}</p><p className="text-xs text-slate-500">{status.online ? 'Online' : status.lastActive ? `Last seen ${relativeTime(status.lastActive)}` : ''}</p></div></div>}
+                  {otherUser && <div className="flex items-center gap-3 border-b border-slate-200 bg-white px-5 py-3"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-950 font-display text-base font-bold text-amber-300">{otherUser.name?.slice(0, 1).toUpperCase()}</div><div><p className="font-display text-base font-bold text-slate-950">{otherUser.name}</p><p className="text-xs text-slate-500">{status.online ? 'Online' : status.lastActive ? `Last seen ${relativeTime(status.lastActive)}` : ''}</p></div></div>}
           <div className="flex-1 space-y-4 overflow-y-auto bg-slate-50/70 p-5 md:p-8">
             {isLoading && <p className="py-16 text-center text-slate-500">Loading conversation...</p>}
             {!isLoading && !error && messages.length === 0 && <p className="py-16 text-center text-slate-400">Start the conversation.</p>}
             {error && <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</p>}
-            {messages.map((message) => { const isMine = senderId(message.sender) === String(user.id); return <motion.div animate={{ opacity: 1, y: 0 }} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`} initial={{ opacity: 0, y: 8 }} key={message._id || message.clientMessageId}><div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-6 ${isMine ? 'rounded-br-sm bg-slate-950 text-white' : 'rounded-bl-sm bg-white text-slate-700 shadow-sm ring-1 ring-slate-200'}`}><p>{message.content}</p><time className={`mt-1 block text-[0.68rem] ${isMine ? 'text-slate-400' : 'text-slate-400'}`}>{new Date(message.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</time></div></motion.div> })}
+            {displayedMessages.map((message) => {
+              const isMine = senderId(message.sender) === String(user.id)
+              return (
+                <motion.div
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
+                  initial={{ opacity: 0, y: 8 }}
+                  key={message._id || message.clientMessageId}
+                >
+                  <div className={`group relative max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-6 ${isMine ? 'rounded-br-sm bg-slate-950 text-white' : 'rounded-bl-sm bg-white text-slate-700 shadow-sm ring-1 ring-slate-200'}`}>
+                    {message.isDeleted ? (
+                      <p className="italic text-slate-400">This message was deleted</p>
+                    ) : (
+                      <>
+                        {message.content && <p>{message.content}</p>}
+                        {message.attachmentType === 'image' && message.attachmentUrl && (
+                          <img
+                            alt="attachment"
+                            className="mt-1 max-h-48 max-w-full rounded-lg"
+                            src={message.attachmentUrl}
+                          />
+                        )}
+                        {message.attachmentType === 'audio' && message.attachmentUrl && (
+                          <audio className="mt-1 w-full" controls src={message.attachmentUrl} />
+                        )}
+                        {isMine && (
+                          <div className="mt-1 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100">
+                            {message.isRead ? (
+                              <CheckCheck size={12} className="text-blue-400" />
+                            ) : (
+                              <Check size={12} className="text-slate-400" />
+                            )}
+                            <button
+                              aria-label="Delete message"
+                              className="text-slate-400 hover:text-red-500"
+                              onClick={() => deleteMessage(message._id)}
+                              type="button"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        )}
+                        <time className={`mt-1 block text-[0.68rem] ${isMine ? 'text-slate-400' : 'text-slate-400'}`}>{new Date(message.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</time>
+                      </>
+                    )}
+                  </div>
+                </motion.div>
+              )
+            })}
             <div ref={messagesEndRef} />
-          </div>
-          <form className="flex gap-3 border-t border-slate-200 bg-white p-4" onSubmit={sendMessage}><input aria-label="Message" className="field-input mt-0" onChange={(event) => handleInputChange(event.target.value)} placeholder="Write a message..." type="text" value={content} /><button className="primary-button !w-auto px-6" disabled={!content.trim() || !socket.connected} type="submit">Send</button></form>
+                    </div>
+          <form className="flex items-end gap-2 border-t border-slate-200 bg-white p-3" onSubmit={sendMessage}>
+            <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImage} className="hidden" disabled={uploading} />
+            <button
+              aria-label="Attach image"
+              className="!w-auto px-2 text-slate-500 hover:text-slate-700"
+              disabled={uploading || !socket.connected}
+              onClick={() => fileInputRef.current?.click()}
+              type="button"
+            >
+              <Image size={20} />
+            </button>
+            <button
+              aria-label={isRecording ? 'Stop recording' : 'Record voice'}
+              className="!w-auto px-2 text-slate-500 hover:text-slate-700"
+              disabled={uploading || !socket.connected}
+              onClick={(e) => { e.preventDefault(); if (isRecording) stopRecording(); else startRecording() }}
+              type="button"
+            >
+              {isRecording ? <span className="text-red-500">●</span> : <Mic size={20} />}
+            </button>
+            {recordError && <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{recordError}</p>}
+            <input
+              aria-label="Message"
+              className="field-input mt-0 flex-1"
+              disabled={!socket.connected}
+              onChange={(event) => handleInputChange(event.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(e) } }}
+              placeholder={isRecording ? 'Recording…' : 'Write a message...'}
+              type="text"
+              value={content}
+            />
+            <button
+              className="primary-button !w-auto px-6"
+              disabled={(!content.trim() && !uploading) || !socket.connected}
+              type="submit"
+            >
+              Send
+            </button>
+          </form>
           {otherIsTyping && <p className="border-t border-slate-100 bg-white px-5 py-2 text-xs text-slate-500">The other user is typing...</p>}
         </section>
       </main>
