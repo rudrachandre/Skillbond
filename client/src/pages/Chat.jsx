@@ -327,12 +327,12 @@ function Chat() {
     : messages
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-surface">
       <Navbar />
       <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-8 md:px-10 md:py-12">
-        <div className="mb-6 flex items-center justify-between gap-4"><div><p className="eyebrow text-amber-600">Private conversation</p><h1 className="font-display mt-3 text-4xl font-bold tracking-tight text-slate-950">Chat</h1></div><div className="flex items-center gap-3"><button aria-label="Search messages" className="!w-auto px-2 text-slate-500 hover:text-slate-700" onClick={openSearch} type="button"><Search size={20} /></button><Link className="text-sm font-semibold text-slate-600 underline decoration-amber-400 decoration-2 underline-offset-4" to="/matches">Back to matches</Link></div></div>
+        <div className="mb-6 flex items-center justify-between gap-4"><div><p className="eyebrow text-amber-400">Private conversation</p><h1 className="font-display mt-3 text-4xl font-bold tracking-tight text-text-primary">Chat</h1></div><div className="flex items-center gap-3"><button aria-label="Search messages" className="!w-auto px-2 text-text-muted hover:text-amber-300" onClick={openSearch} type="button"><Search size={20} /></button><Link className="text-sm font-semibold text-text-muted underline decoration-amber-400 decoration-2 underline-offset-4" to="/matches">Back to matches</Link></div></div>
         {searchOpen && (
-          <div className="mb-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
+          <div className="mb-3 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
             <input
               aria-label="Search messages"
               className="field-input mt-0 flex-1"
@@ -344,7 +344,7 @@ function Chat() {
             />
             <button
               aria-label="Close search"
-              className="!w-auto px-2 text-slate-500 hover:text-slate-700"
+              className="!w-auto px-2 text-text-muted hover:text-amber-300"
               onClick={() => { setSearchOpen(false); setSearchTerm('') }}
               type="button"
             >
@@ -352,12 +352,12 @@ function Chat() {
             </button>
           </div>
         )}
-        <section className="flex min-h-[28rem] flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm" aria-label="Chat conversation">
-                  {otherUser && <div className="flex items-center gap-3 border-b border-slate-200 bg-white px-5 py-3"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-950 font-display text-base font-bold text-amber-300">{otherUser.name?.slice(0, 1).toUpperCase()}</div><div><p className="font-display text-base font-bold text-slate-950">{otherUser.name}</p><p className="text-xs text-slate-500">{status.online ? 'Online' : status.lastActive ? `Last seen ${relativeTime(status.lastActive)}` : ''}</p></div></div>}
-          <div className="flex-1 space-y-4 overflow-y-auto bg-slate-50/70 p-5 md:p-8">
-            {isLoading && <p className="py-16 text-center text-slate-500">Loading conversation...</p>}
-            {!isLoading && !error && messages.length === 0 && <p className="py-16 text-center text-slate-400">Start the conversation.</p>}
-            {error && <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</p>}
+        <section className="glass-card flex min-h-[28rem] flex-1 flex-col overflow-hidden rounded-xl" aria-label="Chat conversation">
+                  {otherUser && <div className="flex items-center gap-3 border-b border-white/10 px-5 py-3"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-400 font-display text-base font-bold text-surface">{otherUser.name?.slice(0, 1).toUpperCase()}</div><div><p className="font-display text-base font-bold text-text-primary">{otherUser.name}</p><p className="text-xs text-text-muted">{status.online ? 'Online' : status.lastActive ? `Last seen ${relativeTime(status.lastActive)}` : ''}</p></div></div>}
+          <div className="flex-1 space-y-4 overflow-y-auto bg-white/[0.02] p-5 md:p-8">
+            {isLoading && <p className="py-16 text-center text-text-muted">Loading conversation...</p>}
+            {!isLoading && !error && messages.length === 0 && <p className="py-16 text-center text-text-muted">Start the conversation.</p>}
+            {error && <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400" role="alert">{error}</p>}
             {displayedMessages.map((message) => {
               const isMine = senderId(message.sender) === String(user.id)
               return (
@@ -367,7 +367,7 @@ function Chat() {
                   initial={{ opacity: 0, y: 8 }}
                   key={message._id || message.clientMessageId}
                 >
-                  <div className={`group relative max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-6 ${isMine ? 'rounded-br-sm bg-slate-950 text-white' : 'rounded-bl-sm bg-white text-slate-700 shadow-sm ring-1 ring-slate-200'}`}>
+                  <div className={`group relative max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-6 ${isMine ? 'rounded-br-sm bg-amber-400 text-surface' : 'rounded-bl-sm bg-white/5 text-text-primary ring-1 ring-white/10'}`}>
                     {message.isDeleted ? (
                       <p className="italic text-slate-400">This message was deleted</p>
                     ) : (
@@ -392,13 +392,13 @@ function Chat() {
                         {isMine && (
                           <div className="mt-1 flex items-center justify-end gap-1">
                             {message.isRead ? (
-                              <CheckCheck size={12} className="text-blue-400" />
+                              <CheckCheck size={12} className="text-blue-700" />
                             ) : (
-                              <Check size={12} className="text-slate-400" />
+                              <Check size={12} className="text-slate-950/50" />
                             )}
                             <button
                               aria-label="Delete message"
-                              className="text-slate-400 hover:text-red-500"
+                              className="text-slate-950/50 hover:text-red-700"
                               onClick={() => deleteMessage(message._id)}
                               type="button"
                             >
@@ -406,7 +406,7 @@ function Chat() {
                             </button>
                           </div>
                         )}
-                        <time className={`mt-1 block text-[0.68rem] ${isMine ? 'text-slate-400' : 'text-slate-400'}`}>{new Date(message.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</time>
+                        <time className={`mt-1 block text-[0.68rem] ${isMine ? 'text-slate-950/60' : 'text-text-muted'}`}>{new Date(message.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</time>
                       </>
                     )}
                   </div>
@@ -415,7 +415,7 @@ function Chat() {
             })}
             <div ref={messagesEndRef} />
                     </div>
-          <form className="flex items-end gap-2 border-t border-slate-200 bg-white p-3" onSubmit={sendMessage}>
+          <form className="flex items-end gap-2 border-t border-white/10 p-3" onSubmit={sendMessage}>
             <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImage} className="hidden" disabled={uploading} />
             {isRecording ? (
               <>
@@ -427,7 +427,7 @@ function Chat() {
                 >
                   <Trash2 size={20} />
                 </button>
-                <div className="flex flex-1 items-center gap-3 rounded-lg bg-slate-100 px-4 py-2.5">
+                <div className="flex flex-1 items-center gap-3 rounded-lg bg-white/5 px-4 py-2.5 ring-1 ring-white/10">
                   <span className="flex items-center gap-1" aria-hidden="true">
                     <span className={`inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-red-500 ${isRecordingPaused ? '[animation-play-state:paused]' : ''}`} />
                     <span className={`inline-block h-2.5 w-1 animate-pulse rounded-full bg-red-400 ${isRecordingPaused ? '[animation-play-state:paused]' : ''}`} />
@@ -435,14 +435,14 @@ function Chat() {
                     <span className={`inline-block h-2 w-1 animate-pulse rounded-full bg-red-400 ${isRecordingPaused ? '[animation-play-state:paused]' : ''}`} />
                     <span className={`inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-red-300 ${isRecordingPaused ? '[animation-play-state:paused]' : ''}`} />
                   </span>
-                  <span className="font-mono text-sm text-slate-700">
+                  <span className="font-mono text-sm text-text-primary">
                     {Math.floor(recordingSeconds / 60)}:{String(recordingSeconds % 60).padStart(2, '0')}
                   </span>
-                  {isRecordingPaused && <span className="text-xs text-slate-500">(paused)</span>}
+                  {isRecordingPaused && <span className="text-xs text-text-muted">(paused)</span>}
                 </div>
                 <button
                   aria-label={isRecordingPaused ? 'Resume recording' : 'Pause recording'}
-                  className="!w-auto px-2 text-slate-500 hover:text-slate-700"
+                  className="!w-auto px-2 text-text-muted hover:text-amber-300"
                   onClick={(e) => { e.preventDefault(); togglePauseRecording() }}
                   type="button"
                 >
@@ -462,7 +462,7 @@ function Chat() {
               <>
                 <button
                   aria-label="Attach image"
-                  className="!w-auto px-2 text-slate-500 hover:text-slate-700"
+                  className="!w-auto px-2 text-text-muted hover:text-amber-300"
                   disabled={uploading || !socket.connected}
                   onClick={() => fileInputRef.current?.click()}
                   type="button"
@@ -471,7 +471,7 @@ function Chat() {
                 </button>
                 <button
                   aria-label="Record voice"
-                  className="!w-auto px-2 text-slate-500 hover:text-slate-700"
+                  className="!w-auto px-2 text-text-muted hover:text-amber-300"
                   disabled={uploading || !socket.connected}
                   onClick={(e) => { e.preventDefault(); startRecording() }}
                   type="button"
@@ -498,7 +498,7 @@ function Chat() {
               </>
             )}
           </form>
-          {otherIsTyping && <p className="border-t border-slate-100 bg-white px-5 py-2 text-xs text-slate-500">The other user is typing...</p>}
+          {otherIsTyping && <p className="border-t border-white/10 px-5 py-2 text-xs text-text-muted">The other user is typing...</p>}
         </section>
       </main>
     </div>

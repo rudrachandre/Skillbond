@@ -27,30 +27,30 @@ function ChatInbox() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-surface">
       <Navbar />
       <main className="mx-auto max-w-4xl px-6 py-12 md:px-10 md:py-16">
         <div className="flex items-baseline justify-between gap-4">
-          <div><p className="eyebrow text-amber-600">Your conversations</p><h1 className="font-display mt-4 text-5xl font-bold tracking-tight text-slate-950 md:text-6xl">Messages</h1></div>
-          <span className="text-sm font-semibold text-slate-500">{conversations.length} {conversations.length === 1 ? 'conversation' : 'conversations'}</span>
+          <div><p className="eyebrow text-amber-400">Your conversations</p><h1 className="font-display mt-4 text-5xl font-bold tracking-tight text-text-primary md:text-6xl">Messages</h1></div>
+          <span className="text-sm font-semibold text-text-muted">{conversations.length} {conversations.length === 1 ? 'conversation' : 'conversations'}</span>
         </div>
-        {error && <p className="mt-8 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</p>}
-        {isLoading ? <div className="py-20 text-center text-slate-500">Loading your messages...</div> : (
-          <div className="mt-10 rounded-xl border border-slate-200 bg-white shadow-sm">
+        {error && <p className="mt-8 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400" role="alert">{error}</p>}
+        {isLoading ? <div className="py-20 text-center text-text-muted">Loading your messages...</div> : (
+          <div className="glass-card mt-10 rounded-xl">
             {conversations.length === 0 ? (
-              <p className="py-16 text-center text-slate-400">No conversations yet. Start chatting with a connection.</p>
+              <p className="py-16 text-center text-text-muted">No conversations yet. Start chatting with a connection.</p>
             ) : (
-              <ul className="divide-y divide-slate-100">
+              <ul className="divide-y divide-white/10">
                 {conversations.map((conversation) => (
                   <motion.li animate={{ opacity: 1, y: 0 }} initial={{ opacity: 0, y: 8 }} key={conversation.matchId} transition={{ duration: 0.2 }}>
-                    <Link className="flex items-center gap-4 px-5 py-4 transition hover:bg-slate-50" to={`/chat/${conversation.matchId}`}>
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-950 font-display text-lg font-bold text-amber-300">{conversation.user?.name?.slice(0, 1).toUpperCase()}</div>
+                    <Link className="flex items-center gap-4 px-5 py-4 transition hover:bg-white/5" to={`/chat/${conversation.matchId}`}>
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-400 font-display text-lg font-bold text-surface">{conversation.user?.name?.slice(0, 1).toUpperCase()}</div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-baseline justify-between gap-3">
-                          <p className="truncate font-display text-lg font-bold text-slate-950">{conversation.user?.name || 'Connection'}</p>
-                          {conversation.lastMessage && <span className="shrink-0 text-xs text-slate-400">{relativeTime(conversation.lastMessage.createdAt)}</span>}
+                          <p className="truncate font-display text-lg font-bold text-text-primary">{conversation.user?.name || 'Connection'}</p>
+                          {conversation.lastMessage && <span className="shrink-0 text-xs text-text-muted">{relativeTime(conversation.lastMessage.createdAt)}</span>}
                         </div>
-                        <p className="mt-0.5 truncate text-sm text-slate-500">{conversation.lastMessage ? conversation.lastMessage.content : 'No messages yet'}</p>
+                        <p className="mt-0.5 truncate text-sm text-text-muted">{conversation.lastMessage ? conversation.lastMessage.content : 'No messages yet'}</p>
                       </div>
                     </Link>
                   </motion.li>
