@@ -85,10 +85,20 @@ io.on('connection', (socket) => {
       if (!match) return socket.emit('chat_error', 'Accepted match not found');
       socket.join(String(match._id));
 
-      // Mark all messages in this match NOT sent by this user as read
-      // (the schema has no receiver field; recipient = anyone who isn't the sender).
+      // Respect the "Restrict" feature: if the reader has restricted a sender,
+      // that sender must NOT see read receipts for their messages. Fetch the
+      // reader's restricted list and exclude those senders from read marking.
+      const reader = await User.findById(socket.user._id).select('restrictedUsers');
+      const restrictedSenders = (reader?.restrictedUsers || []).map(String);
+
+      // Mark all messages in this match NOT sent by this user as read,
+      // skipping any sender this user has restricted (so they don't get receipts).
       const result = await Message.updateMany(
-        { matchId: match._id, sender: { $ne: socket.user._id }, isRead: false },
+        {
+          matchId: match._id,
+          sender: { $ne: socket.user._id, $nin: restrictedSenders },
+          isRead: false,
+        },
         { $set: { isRead: true } },
       );
       if (result.modifiedCount > 0) {

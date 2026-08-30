@@ -57,6 +57,16 @@ const userSchema = new mongoose.Schema({
     ref: 'User',
     default: [],
   },
+  restrictedUsers: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: 'User',
+    default: [],
+  },
+  mutedMatches: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: 'Match',
+    default: [],
+  },
   lastActive: {
     type: Date,
     default: Date.now,

@@ -101,11 +101,46 @@ const unblockUser = async (req, res) => {
   }
 };
 
+const restrictUser = async (req, res) => {
+  try {
+    const targetId = req.params.userId;
+    if (String(req.user._id) === String(targetId)) {
+      return res.status(400).json({ success: false, message: 'You cannot restrict yourself' });
+    }
+    if (!req.user.restrictedUsers.some((id) => String(id) === String(targetId))) {
+      req.user.restrictedUsers.push(targetId);
+    }
+    await req.user.save();
+    return res.json({ success: true, message: 'User restricted', data: {} });
+  } catch (error) {
+    console.error(`Restrict user error: ${error.message}`);
+    return res.status(500).json({ success: false, message: 'Unable to restrict user' });
+  }
+};
+
+const unrestrictUser = async (req, res) => {
+  try {
+    const targetId = req.params.userId;
+    req.user.restrictedUsers = req.user.restrictedUsers.filter((id) => String(id) !== String(targetId));
+    await req.user.save();
+    return res.json({ success: true, message: 'User unrestricted', data: {} });
+  } catch (error) {
+    console.error(`Unrestrict user error: ${error.message}`);
+    return res.status(500).json({ success: false, message: 'Unable to unrestrict user' });
+  }
+};
+
 const getStatus = async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId).select('lastActive name');
+    const user = await User.findById(req.params.userId).select('lastActive name restrictedUsers');
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    // If the requesting user is restricted by the target, hide real status.
+    const requestingUserId = String(req.user._id);
+    const isRestricted = (user.restrictedUsers || []).some((id) => String(id) === requestingUserId);
+    if (isRestricted) {
+      return res.json({ success: true, message: 'User status retrieved', data: { online: false, lastActive: null } });
     }
     return res.json({
       success: true,
@@ -118,4 +153,4 @@ const getStatus = async (req, res) => {
   }
 };
 
-module.exports = { blockUser, getStatus, unblockUser, updateProfile };
+module.exports = { blockUser, getStatus, restrictUser, unblockUser, unrestrictUser, updateProfile };

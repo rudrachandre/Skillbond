@@ -196,14 +196,52 @@ const getMyMatches = async (req, res) => {
       .populate('userB', '-password')
       .sort({ createdAt: -1 });
 
+    const mutedIds = (req.user.mutedMatches || []).map(String);
+    const data = matches.map((match) => {
+      const obj = match.toObject();
+      obj.muted = mutedIds.includes(String(match._id));
+      return obj;
+    });
+
     return res.json({
       success: true,
       message: 'Accepted matches retrieved',
-      data: { matches },
+      data: { matches: data },
     });
   } catch (error) {
     console.error(`Accepted matches error: ${error.message}`);
     return res.status(500).json({ success: false, message: 'Unable to retrieve matches' });
+  }
+};
+
+const muteMatch = async (req, res) => {
+  try {
+    const matchId = req.params.matchId;
+    const match = await Match.findOne({
+      _id: matchId,
+      $or: [{ userA: req.user._id }, { userB: req.user._id }],
+    });
+    if (!match) return res.status(404).json({ success: false, message: 'Match not found' });
+    if (!req.user.mutedMatches.some((id) => String(id) === String(matchId))) {
+      req.user.mutedMatches.push(matchId);
+      await req.user.save();
+    }
+    return res.json({ success: true, message: 'Match muted', data: {} });
+  } catch (error) {
+    console.error(`Mute match error: ${error.message}`);
+    return res.status(500).json({ success: false, message: 'Unable to mute match' });
+  }
+};
+
+const unmuteMatch = async (req, res) => {
+  try {
+    const matchId = req.params.matchId;
+    req.user.mutedMatches = req.user.mutedMatches.filter((id) => String(id) !== String(matchId));
+    await req.user.save();
+    return res.json({ success: true, message: 'Match unmuted', data: {} });
+  } catch (error) {
+    console.error(`Unmute match error: ${error.message}`);
+    return res.status(500).json({ success: false, message: 'Unable to unmute match' });
   }
 };
 
@@ -229,4 +267,4 @@ const unmatch = async (req, res) => {
   }
 };
 
-module.exports = { getMatches, getMyMatches, getPendingMatches, requestMatch, respondToMatch, unmatch };
+module.exports = { getMatches, getMyMatches, getPendingMatches, muteMatch, requestMatch, respondToMatch, unmatch, unmuteMatch };
