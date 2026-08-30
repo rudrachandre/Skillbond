@@ -39,7 +39,7 @@ function ForgotPassword() {
         </div>
         <form className="space-y-5" onSubmit={handleSubmit}>
           <label className="field-label" htmlFor="email">Email<input className="field-input" id="email" name="email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} /></label>
-          {error && <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</p>}
+          {error && <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400" role="alert">{error}</p>}
           {message && <p className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700" role="status">{message}</p>}
           <button className="primary-button" disabled={isSubmitting} type="submit">{isSubmitting ? 'Sending...' : 'Send reset link'}</button>
         </form>

@@ -53,7 +53,7 @@ function ResetPassword() {
         <form className="space-y-5" onSubmit={handleSubmit}>
           <label className="field-label" htmlFor="newPassword">New password<input className="field-input" id="newPassword" minLength={6} name="newPassword" onChange={handleChange} required type="password" value={form.newPassword} /></label>
           <label className="field-label" htmlFor="confirmPassword">Confirm password<input className="field-input" id="confirmPassword" name="confirmPassword" onChange={handleChange} required type="password" value={form.confirmPassword} /></label>
-          {error && <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</p>}
+          {error && <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400" role="alert">{error}</p>}
           {success && <p className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700" role="status">{success} Redirecting to sign in...</p>}
           <button className="primary-button" disabled={isSubmitting || Boolean(success)} type="submit">{isSubmitting ? 'Resetting...' : 'Reset password'}</button>
         </form>

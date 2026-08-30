@@ -48,7 +48,7 @@ function Register() {
           <label className="field-label" htmlFor="name">Name<input className="field-input" id="name" name="name" onChange={handleChange} required type="text" value={form.name} /></label>
           <label className="field-label" htmlFor="email">Email<input className="field-input" id="email" name="email" onChange={handleChange} required type="email" value={form.email} /></label>
           <label className="field-label" htmlFor="password">Password<input className="field-input" id="password" minLength="6" name="password" onChange={handleChange} required type="password" value={form.password} /></label>
-          {error && <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</p>}
+          {error && <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400" role="alert">{error}</p>}
           <button className="primary-button" disabled={isSubmitting} type="submit">{isSubmitting ? 'Creating account...' : 'Create account'}</button>
         </form>
         <p className="mt-8 text-center text-sm text-slate-500">Already a member? <Link className="font-semibold text-slate-950 underline decoration-amber-400 decoration-2 underline-offset-4" to="/">Sign in</Link></p>
