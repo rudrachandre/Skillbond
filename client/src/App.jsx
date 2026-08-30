@@ -1,5 +1,9 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './context/useAuth'
+import AdminDashboard from './pages/Admin/AdminDashboard'
+import AdminLayout from './pages/Admin/AdminLayout'
+import AdminReports from './pages/Admin/AdminReports'
+import AdminUsers from './pages/Admin/AdminUsers'
 import BlockedUsers from './pages/BlockedUsers'
 import Dashboard from './pages/Dashboard'
 import Chat from './pages/Chat'
@@ -24,6 +28,20 @@ function ProtectedRoute({ children }) {
   }
 
   return user ? children : <Navigate to="/" replace />
+}
+
+function AdminRoute({ children }) {
+  const { isLoading, user } = useAuth()
+
+  if (isLoading) {
+    return <div className="flex min-h-screen items-center justify-center text-slate-500">Loading your workspace...</div>
+  }
+
+  if (!user) {
+    return <Navigate to="/" replace />
+  }
+
+  return user.role === 'admin' ? children : <Navigate to="/dashboard" replace />
 }
 
 function App() {
@@ -99,6 +117,18 @@ function App() {
         }
       />
       <Route path="/profile/:userId" element={<PublicProfile />} />
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminLayout />
+          </AdminRoute>
+        }
+      >
+        <Route index element={<AdminDashboard />} />
+        <Route path="users" element={<AdminUsers />} />
+        <Route path="reports" element={<AdminReports />} />
+      </Route>
       <Route
         path="/dashboard"
         element={

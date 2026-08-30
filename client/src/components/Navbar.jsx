@@ -1,4 +1,4 @@
-import { Bell, Calendar, Compass, MessageCircle, Users, Wallet } from 'lucide-react'
+import { Bell, Calendar, Compass, MessageCircle, Shield, Users, Wallet } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
@@ -55,6 +55,11 @@ function Navbar() {
         <button className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-text-muted transition hover:bg-white/5 hover:text-amber-300" onClick={() => navigate('/credits')} type="button">
           <Wallet size={16} /> Credits
         </button>
+        {user?.role === 'admin' && (
+          <button className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-text-muted transition hover:bg-white/5 hover:text-amber-300" onClick={() => navigate('/admin')} type="button">
+            <Shield size={16} /> Admin
+          </button>
+        )}
         <div className="relative">
           <button aria-expanded={isOpen} aria-label="Notifications" className="relative rounded-lg p-2 text-text-muted transition hover:bg-white/5 hover:text-amber-300" onClick={() => { setIsProfileOpen(false); setIsOpen((current) => !current) }} type="button"><Bell size={19} /></button>
           {unreadCount > 0 && <span className="pointer-events-none absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-400 px-1 text-[0.65rem] font-bold text-surface">{unreadCount > 99 ? '99+' : unreadCount}</span>}

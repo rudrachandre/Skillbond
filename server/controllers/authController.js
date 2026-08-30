@@ -24,6 +24,7 @@ const userData = (user) => ({
   avatar: user.avatar,
   credits: user.credits,
   createdAt: user.createdAt,
+  role: user.role,
 });
 
 const getEnrichedUser = async (user) => {

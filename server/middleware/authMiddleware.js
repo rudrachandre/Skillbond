@@ -40,4 +40,15 @@ const protect = async (req, res, next) => {
   }
 };
 
-module.exports = { protect };
+// Must run AFTER `protect` — assumes req.user is already set.
+const requireAdmin = (req, res, next) => {
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Admin access required',
+    });
+  }
+  return next();
+};
+
+module.exports = { protect, requireAdmin };
