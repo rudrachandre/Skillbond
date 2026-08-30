@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Search } from 'lucide-react'
 import api from '../../api/axios'
-import AdminLayout from './AdminLayout'
 
 function AdminUsers() {
   const [error, setError] = useState(null)
@@ -29,7 +28,7 @@ function AdminUsers() {
   }, [page, search])
 
   return (
-    <AdminLayout>
+    <div>
       <h1 className="font-display text-2xl font-bold text-text-primary">Users</h1>
       <p className="mt-1 text-sm text-text-muted">All registered users on the platform.</p>
 
@@ -108,7 +107,7 @@ function AdminUsers() {
           </div>
         </>
       )}
-    </AdminLayout>
+    </div>
   )
 }
 

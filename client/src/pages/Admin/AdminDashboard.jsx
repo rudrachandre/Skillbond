@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Calendar, Flag, MessageCircle, Users, CalendarCheck, CalendarX } from 'lucide-react'
 import api from '../../api/axios'
-import AdminLayout from './AdminLayout'
 
 function AdminDashboard() {
   const [error, setError] = useState(null)
@@ -35,7 +34,7 @@ function AdminDashboard() {
     : []
 
   return (
-    <AdminLayout>
+    <div>
       <h1 className="font-display text-2xl font-bold text-text-primary">Dashboard</h1>
       <p className="mt-1 text-sm text-text-muted">Platform-wide statistics at a glance.</p>
 
@@ -57,7 +56,7 @@ function AdminDashboard() {
           ))}
         </div>
       )}
-    </AdminLayout>
+    </div>
   )
 }
 

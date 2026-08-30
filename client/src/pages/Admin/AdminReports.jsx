@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Check } from 'lucide-react'
 import api from '../../api/axios'
-import AdminLayout from './AdminLayout'
 
 function AdminReports() {
   const [error, setError] = useState(null)
@@ -36,7 +35,7 @@ function AdminReports() {
   }
 
   return (
-    <AdminLayout>
+    <div>
       <h1 className="font-display text-2xl font-bold text-text-primary">Reports</h1>
       <p className="mt-1 text-sm text-text-muted">User reports awaiting review.</p>
 
@@ -81,7 +80,7 @@ function AdminReports() {
           )}
         </div>
       )}
-    </AdminLayout>
+    </div>
   )
 }
 
