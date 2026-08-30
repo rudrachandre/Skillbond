@@ -292,6 +292,7 @@ function Chat() {
     if (!recorder || !isRecording) return
     if (isRecordingPaused) {
       recorder.resume()
+      clearInterval(recordingTimerRef.current)
       recordingTimerRef.current = setInterval(() => {
         setRecordingSeconds((seconds) => seconds + 1)
       }, 1000)
