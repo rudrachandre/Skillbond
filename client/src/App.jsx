@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './context/useAuth'
+import BlockedUsers from './pages/BlockedUsers'
 import Dashboard from './pages/Dashboard'
 import Chat from './pages/Chat'
 import ChatInbox from './pages/ChatInbox'
@@ -66,6 +67,14 @@ function App() {
         element={
           <ProtectedRoute>
             <Sessions />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/blocked-users"
+        element={
+          <ProtectedRoute>
+            <BlockedUsers />
           </ProtectedRoute>
         }
       />

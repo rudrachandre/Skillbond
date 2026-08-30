@@ -1,3 +1,4 @@
+const Match = require('../models/Match');
 const Review = require('../models/Review');
 const Session = require('../models/Session');
 const User = require('../models/User');
@@ -61,9 +62,24 @@ const createReview = async (req, res) => {
 
 const getUserReviews = async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId).select('name avatar');
+    const user = await User.findById(req.params.userId).select('name avatar profileVisibility');
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Respect the profile owner's visibility setting.
+    const isOwner = req.user && String(req.user._id) === String(user._id);
+    if (!isOwner && user.profileVisibility === 'connections') {
+      const acceptedMatch = await Match.findOne({
+        status: 'accepted',
+        $or: [
+          { userA: req.user?._id, userB: user._id },
+          { userA: user._id, userB: req.user?._id },
+        ],
+      });
+      if (!acceptedMatch) {
+        return res.status(403).json({ success: false, message: 'This profile is private' });
+      }
     }
 
     const reviews = await Review.find({ reviewee: user._id })

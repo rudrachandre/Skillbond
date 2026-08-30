@@ -130,11 +130,67 @@ const unrestrictUser = async (req, res) => {
   }
 };
 
+const updateOnlineStatus = async (req, res) => {
+  try {
+    const { showOnlineStatus } = req.body;
+    if (typeof showOnlineStatus !== 'boolean') {
+      return res.status(400).json({ success: false, message: 'showOnlineStatus must be a boolean' });
+    }
+    req.user.showOnlineStatus = showOnlineStatus;
+    await req.user.save();
+    return res.json({
+      success: true,
+      message: 'Online status setting updated',
+      data: { showOnlineStatus: req.user.showOnlineStatus },
+    });
+  } catch (error) {
+    console.error(`Online status update error: ${error.message}`);
+    return res.status(500).json({ success: false, message: 'Unable to update online status setting' });
+  }
+};
+
+const updateProfileVisibility = async (req, res) => {
+  try {
+    const { profileVisibility } = req.body;
+    if (!['everyone', 'connections'].includes(profileVisibility)) {
+      return res.status(400).json({ success: false, message: 'profileVisibility must be "everyone" or "connections"' });
+    }
+    req.user.profileVisibility = profileVisibility;
+    await req.user.save();
+    return res.json({
+      success: true,
+      message: 'Profile visibility updated',
+      data: { profileVisibility: req.user.profileVisibility },
+    });
+  } catch (error) {
+    console.error(`Profile visibility update error: ${error.message}`);
+    return res.status(500).json({ success: false, message: 'Unable to update profile visibility' });
+  }
+};
+
+const getBlockedUsers = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).populate('blockedUsers', 'name avatar');
+    return res.json({
+      success: true,
+      message: 'Blocked users retrieved',
+      data: { blockedUsers: (user.blockedUsers || []).map((blocked) => ({ _id: blocked._id, name: blocked.name, avatar: blocked.avatar })) },
+    });
+  } catch (error) {
+    console.error(`Blocked users retrieval error: ${error.message}`);
+    return res.status(500).json({ success: false, message: 'Unable to retrieve blocked users' });
+  }
+};
+
 const getStatus = async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId).select('lastActive name restrictedUsers');
+    const user = await User.findById(req.params.userId).select('lastActive name restrictedUsers showOnlineStatus');
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    // If the target user disabled showing their online status, hide it.
+    if (user.showOnlineStatus === false) {
+      return res.json({ success: true, message: 'User status retrieved', data: { online: false, lastActive: null } });
     }
     // If the requesting user is restricted by the target, hide real status.
     const requestingUserId = String(req.user._id);
@@ -153,4 +209,4 @@ const getStatus = async (req, res) => {
   }
 };
 
-module.exports = { blockUser, getStatus, restrictUser, unblockUser, unrestrictUser, updateProfile };
+module.exports = { blockUser, getBlockedUsers, getStatus, restrictUser, unblockUser, unrestrictUser, updateOnlineStatus, updateProfileVisibility, updateProfile };

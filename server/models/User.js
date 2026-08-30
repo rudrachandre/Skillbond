@@ -67,6 +67,15 @@ const userSchema = new mongoose.Schema({
     ref: 'Match',
     default: [],
   },
+  showOnlineStatus: {
+    type: Boolean,
+    default: true,
+  },
+  profileVisibility: {
+    type: String,
+    enum: ['everyone', 'connections'],
+    default: 'everyone',
+  },
   lastActive: {
     type: Date,
     default: Date.now,
