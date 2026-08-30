@@ -6,22 +6,17 @@ function ForgotPassword() {
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
-  const [resetToken, setResetToken] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async (event) => {
     event.preventDefault()
     setError('')
     setMessage('')
-    setResetToken('')
     setIsSubmitting(true)
 
     try {
       const response = await api.post('/auth/forgot-password', { email })
-      setMessage(response.data.message || 'Password reset link generated')
-      // TEMPORARY (development only): the backend returns the raw token until
-      // real email sending is implemented. Remove once email delivery exists.
-      setResetToken(response.data.data?.resetToken || '')
+      setMessage(response.data.message || "If an account exists with that email, we've sent a password reset link. Please check your inbox (and spam folder).")
     } catch (requestError) {
       setError(requestError.response?.data?.message || 'Unable to process request. Please try again.')
     } finally {
@@ -46,14 +41,7 @@ function ForgotPassword() {
           <label className="field-label" htmlFor="email">Email<input className="field-input" id="email" name="email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} /></label>
           {error && <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</p>}
           {message && <p className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700" role="status">{message}</p>}
-          {resetToken && (
-            <div className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              <p className="font-semibold">For testing: use this link</p>
-              <Link className="break-all underline" to={`/reset-password/${resetToken}`}>/reset-password/{resetToken}</Link>
-              <p className="mt-1 text-xs">(Temporary until email sending is implemented.)</p>
-            </div>
-          )}
-          <button className="primary-button" disabled={isSubmitting} type="submit">{isSubmitting ? 'Generating...' : 'Generate reset link'}</button>
+          <button className="primary-button" disabled={isSubmitting} type="submit">{isSubmitting ? 'Sending...' : 'Send reset link'}</button>
         </form>
         <p className="mt-8 text-center text-sm text-slate-500">Remembered it after all? <Link className="font-semibold text-slate-950 underline decoration-amber-400 decoration-2 underline-offset-4" to="/">Back to sign in</Link></p>
       </section>

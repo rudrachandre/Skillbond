@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const sendEmail = require('../utils/sendEmail');
 const User = require('../models/User');
 const Review = require('../models/Review');
 const Session = require('../models/Session');
@@ -52,7 +53,7 @@ const changePassword = async (req, res) => {
     if (!currentPassword || !newPassword || newPassword.length < 6) return res.status(400).json({ success: false, message: 'Current password and a new password of at least 6 characters are required' });
     const user = await User.findById(req.user._id);
     if (!user) return res.status(401).json({ success: false, message: 'User no longer exists' });
-    if (!(await bcrypt.compare(currentPassword, user.password))) return res.status(401).json({ success: false, message: 'Current password is incorrect' });
+    if (!(await bcrypt.compare(currentPassword, user.password))) return res.status(403).json({ success: false, message: 'Current password is incorrect' });
     user.password = newPassword;
     await user.save();
     return res.json({ success: true, message: 'Password changed successfully', data: {} });
@@ -70,10 +71,10 @@ const forgotPassword = async (req, res) => {
 
     const user = await User.findOne({ email: email.trim().toLowerCase() });
 
-    // Respond with success regardless of whether the account exists so the
-    // endpoint cannot be used to enumerate registered emails.
+    // Respond with the same generic message regardless of whether the account
+    // exists so the endpoint cannot be used to enumerate registered emails.
     if (!user) {
-      return res.json({ success: true, message: 'If an account exists for that email, a reset link has been generated', data: {} });
+      return res.json({ success: true, message: 'If an account exists with that email, a reset link has been sent.', data: {} });
     }
 
     const rawToken = crypto.randomBytes(32).toString('hex');
@@ -81,15 +82,33 @@ const forgotPassword = async (req, res) => {
     user.resetPasswordExpires = Date.now() + 60 * 60 * 1000; // 1 hour
     await user.save();
 
-    // NOTE (TEMPORARY, DEVELOPMENT ONLY): the raw (unhashed) token is returned
-    // in the API response because no email service is configured yet.
-    // TODO: BEFORE PRODUCTION, remove `resetToken` from this response and
-    // replace it with actual email delivery (e.g. nodemailer + an email
-    // service) sending a link like `${CLIENT_URL}/reset-password/${rawToken}`.
+    // Build the frontend link. CLIENT_URL should be set in the environment
+    // (local .env and on Render); fall back to the deployed client URL.
+    const clientUrl = process.env.CLIENT_URL || 'https://skillbond.onrender.com';
+    const resetUrl = `${clientUrl}/reset-password/${rawToken}`;
+
+    // The generic message below is used for both found and not-found cases so
+    // the endpoint cannot be used to enumerate registered emails.
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'Reset your SkillBond password',
+        html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;">
+          <h2 style="color:#0f172a;margin:0 0 12px;">Reset your SkillBond password</h2>
+          <p style="color:#475569;line-height:1.6;">You requested a password reset. Click the button below to choose a new password. This link expires in 1 hour.</p>
+          <p style="margin:24px 0;"><a href="${resetUrl}" style="background:#0f172a;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">Reset password</a></p>
+          <p style="color:#94a3b8;font-size:13px;">If you didn't request this, you can safely ignore this email.</p>
+        </div>`,
+      });
+    } catch (emailError) {
+      console.error(`Reset email delivery failed: ${emailError.message}`);
+      return res.status(500).json({ success: false, message: 'Unable to send reset email. Please try again later.' });
+    }
+
     return res.json({
       success: true,
-      message: 'Password reset link generated',
-      data: { resetToken: rawToken },
+      message: 'If an account exists with that email, a reset link has been sent.',
+      data: {},
     });
   } catch (error) {
     console.error(`Forgot password error: ${error.message}`);
