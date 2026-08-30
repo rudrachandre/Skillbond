@@ -48,6 +48,7 @@ function Login() {
         <form className="space-y-5" onSubmit={handleSubmit}>
           <label className="field-label" htmlFor="email">Email<input className="field-input" id="email" name="email" onChange={handleChange} required type="email" value={form.email} /></label>
           <label className="field-label" htmlFor="password">Password<input className="field-input" id="password" name="password" onChange={handleChange} required type="password" value={form.password} /></label>
+          <p className="text-right text-sm"><Link className="font-semibold text-slate-950 underline decoration-amber-400 decoration-2 underline-offset-4" to="/forgot-password">Forgot password?</Link></p>
           {error && <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</p>}
           <button className="primary-button" disabled={isSubmitting} type="submit">{isSubmitting ? 'Signing in...' : 'Sign in'}</button>
         </form>

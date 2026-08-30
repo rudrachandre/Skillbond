@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Review = require('../models/Review');
@@ -57,6 +58,73 @@ const changePassword = async (req, res) => {
     return res.json({ success: true, message: 'Password changed successfully', data: {} });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Unable to change password' });
+  }
+};
+
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+
+    // Respond with success regardless of whether the account exists so the
+    // endpoint cannot be used to enumerate registered emails.
+    if (!user) {
+      return res.json({ success: true, message: 'If an account exists for that email, a reset link has been generated', data: {} });
+    }
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    user.resetPasswordToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+    user.resetPasswordExpires = Date.now() + 60 * 60 * 1000; // 1 hour
+    await user.save();
+
+    // NOTE (TEMPORARY, DEVELOPMENT ONLY): the raw (unhashed) token is returned
+    // in the API response because no email service is configured yet.
+    // TODO: BEFORE PRODUCTION, remove `resetToken` from this response and
+    // replace it with actual email delivery (e.g. nodemailer + an email
+    // service) sending a link like `${CLIENT_URL}/reset-password/${rawToken}`.
+    return res.json({
+      success: true,
+      message: 'Password reset link generated',
+      data: { resetToken: rawToken },
+    });
+  } catch (error) {
+    console.error(`Forgot password error: ${error.message}`);
+    return res.status(500).json({ success: false, message: 'Unable to process forgot password request' });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'New password of at least 6 characters is required' });
+    }
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Reset link is invalid or has expired' });
+    }
+
+    user.password = newPassword; // hashed by the pre-save hook
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    return res.json({ success: true, message: 'Password reset successfully', data: {} });
+  } catch (error) {
+    console.error(`Reset password error: ${error.message}`);
+    return res.status(500).json({ success: false, message: 'Unable to reset password' });
   }
 };
 
@@ -165,4 +233,4 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { changePassword, deleteAccount, getEnrichedUser, getMe, login, register, userData };
+module.exports = { changePassword, deleteAccount, forgotPassword, getEnrichedUser, getMe, login, register, resetPassword, userData };

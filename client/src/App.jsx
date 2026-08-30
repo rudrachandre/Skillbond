@@ -6,12 +6,14 @@ import Chat from './pages/Chat'
 import ChatInbox from './pages/ChatInbox'
 import CreditHistory from './pages/CreditHistory'
 import EditProfile from './pages/EditProfile'
+import ForgotPassword from './pages/ForgotPassword'
 import Login from './pages/Login'
 import Matches from './pages/Matches'
 import Discover from './pages/Discover'
 import Onboarding from './pages/Onboarding'
 import PublicProfile from './pages/PublicProfile'
 import Register from './pages/Register'
+import ResetPassword from './pages/ResetPassword'
 import Sessions from './pages/Sessions'
 
 function ProtectedRoute({ children }) {
@@ -29,6 +31,8 @@ function App() {
     <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
       <Route path="/profile" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
       <Route
         path="/chat/:matchId"

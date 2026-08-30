@@ -76,6 +76,14 @@ const userSchema = new mongoose.Schema({
     enum: ['everyone', 'connections'],
     default: 'everyone',
   },
+  resetPasswordToken: {
+    type: String,
+    default: null,
+  },
+  resetPasswordExpires: {
+    type: Date,
+    default: null,
+  },
   lastActive: {
     type: Date,
     default: Date.now,
