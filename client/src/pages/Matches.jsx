@@ -190,18 +190,19 @@ function Matches() {
               <p className="text-sm text-text-muted">{match.matchScore}% match</p>
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <Link className="shrink-0 rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-amber-300/60 hover:text-amber-300" to={`/chat/${match._id}`}>Message</Link>
-            <button className="shrink-0 rounded-lg border border-white/15 px-3 py-2 text-sm font-semibold text-text-muted transition hover:border-red-400/40 hover:text-red-400" disabled={unmatchingId === match._id} onClick={() => unmatch(match)} type="button">{unmatchingId === match._id ? 'Removing...' : 'Unmatch'}</button>
-            <button className="shrink-0 rounded-lg border border-white/15 px-3 py-2 text-sm font-semibold text-red-400 transition hover:border-red-400/60 hover:bg-red-500/10" disabled={blockingId === match._id} onClick={() => blockConnection(match)} type="button">{blockingId === match._id ? 'Blocking...' : 'Block'}</button>
-            {reportingId === match._id ? (
-              <button className="shrink-0 rounded-lg border border-white/15 px-3 py-2 text-sm font-semibold text-text-muted transition hover:border-white/30 hover:text-slate-200" disabled={isSubmittingReport} onClick={() => { setReportingId(null); setReportReason(''); setReportMessage('') }} type="button">Cancel</button>
-            ) : (
-              <button className="shrink-0 rounded-lg border border-white/15 px-3 py-2 text-sm font-semibold text-text-muted transition hover:border-white/30 hover:text-slate-200" onClick={() => setReportingId(match._id)} type="button">Report</button>
-            )}
-            <button className="shrink-0 rounded-lg border border-white/15 px-3 py-2 text-sm font-semibold text-text-muted transition hover:border-amber-300/60 hover:text-amber-300" disabled={restrictingId === match._id} onClick={() => restrictConnection(match)} type="button">{restrictingId === match._id ? 'Restricting...' : 'Restrict'}</button>
-            <button className="shrink-0 rounded-lg border border-white/15 px-3 py-2 text-sm font-semibold text-text-muted transition hover:border-white/30 hover:text-slate-200" disabled={mutingId === match._id} onClick={() => toggleMute(match)} type="button">{mutingId === match._id ? 'Saving...' : (match.muted ? 'Unmute' : 'Mute')}</button>
-          </div>
+          <span className="shrink-0 font-display text-2xl font-bold text-amber-300">{match.matchScore}%</span>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Link className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-amber-300/60 hover:text-amber-300" to={`/chat/${match._id}`}>Message</Link>
+          <button className="rounded-lg border border-white/15 px-3 py-2 text-sm font-semibold text-text-muted transition hover:border-red-400/40 hover:text-red-400" disabled={unmatchingId === match._id} onClick={() => unmatch(match)} type="button">{unmatchingId === match._id ? 'Removing...' : 'Unmatch'}</button>
+          <button className="rounded-lg border border-white/15 px-3 py-2 text-sm font-semibold text-red-400 transition hover:border-red-400/60 hover:bg-red-500/10" disabled={blockingId === match._id} onClick={() => blockConnection(match)} type="button">{blockingId === match._id ? 'Blocking...' : 'Block'}</button>
+          {reportingId === match._id ? (
+            <button className="rounded-lg border border-white/15 px-3 py-2 text-sm font-semibold text-text-muted transition hover:border-white/30 hover:text-slate-200" disabled={isSubmittingReport} onClick={() => { setReportingId(null); setReportReason(''); setReportMessage('') }} type="button">Cancel</button>
+          ) : (
+            <button className="rounded-lg border border-white/15 px-3 py-2 text-sm font-semibold text-text-muted transition hover:border-white/30 hover:text-slate-200" onClick={() => setReportingId(match._id)} type="button">Report</button>
+          )}
+          <button className="rounded-lg border border-white/15 px-3 py-2 text-sm font-semibold text-text-muted transition hover:border-amber-300/60 hover:text-amber-300" disabled={restrictingId === match._id} onClick={() => restrictConnection(match)} type="button">{restrictingId === match._id ? 'Restricting...' : 'Restrict'}</button>
+          <button className="rounded-lg border border-white/15 px-3 py-2 text-sm font-semibold text-text-muted transition hover:border-white/30 hover:text-slate-200" disabled={mutingId === match._id} onClick={() => toggleMute(match)} type="button">{mutingId === match._id ? 'Saving...' : (match.muted ? 'Unmute' : 'Mute')}</button>
         </div>
         {reportingId === match._id && (
           <div className="mt-4 rounded-lg border border-white/10 bg-white/5 p-4">
