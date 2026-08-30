@@ -381,7 +381,13 @@ function Chat() {
                           />
                         )}
                         {message.attachmentType === 'audio' && message.attachmentUrl && (
-                          <audio className="mt-1 w-full" controls src={message.attachmentUrl} />
+                          <audio
+                            className="mt-1 w-full min-w-0"
+                            controls
+                            preload="metadata"
+                            src={message.attachmentUrl}
+                            type="audio/webm"
+                          />
                         )}
                         {isMine && (
                           <div className="mt-1 flex items-center justify-end gap-1">
